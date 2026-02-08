@@ -1,0 +1,10 @@
+global-styling:
+  css:
+    theme:
+      css/mapam-volunteer-global.css: {}
+
+export-planning-styling:
+  version: VERSION
+  css:
+    theme:
+      css/export-planning.css: { }

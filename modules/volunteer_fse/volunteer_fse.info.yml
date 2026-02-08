@@ -1,0 +1,9 @@
+name: 'Volunteer Fse'
+type: module
+description: 'Provide plugin for FlagFse.'
+core_version_requirement: ^10
+package: Mapam
+version: 1.0.0
+dependencies:
+  - flag_fse:flag_fse
+  - og:og

@@ -1,0 +1,652 @@
+<?php
+
+/**
+ * @file
+ * Contains mapam_volunteer.module.
+ */
+
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\flag\Entity\Flagging;
+use Drupal\Core\Database\Database;
+use Drupal\Core\Access\AccessResult;
+use Drupal\flag\FlagInterface;
+use Drupal\Core\Session\AccountInterface;
+use Drupal\flag\Entity\Flag;
+use Drupal\user\Entity\User;
+use Drupal\node\Entity\NodeType;
+use Drupal\Core\Entity\EntityStorageException;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\node\Entity\Node;
+use Drupal\Component\Serialization\Json;
+
+/**
+ * Implements hook_page_attachments().
+ */
+function mapam_volunteer_page_attachments(array &$attachments) {
+  $attachments['#attached']['library'][] = 'mapam_volunteer/global-styling';
+}
+
+/**
+ * Implements hook_theme().
+ */
+function mapam_volunteer_theme($existing, $type, $theme, $path) {
+  return [
+    'flag_fse_fallback_link' => [
+      'render element' => 'elements',
+      'base hook' => 'flag_fse_link',
+      'variables' => [
+        'attributes' => [],
+      ],
+    ],
+    'flag_fse_fallback_link' => [
+      'render element' => 'elements',
+      'base hook' => 'flag_fse_fallback_link',
+      'template' => 'volunteer-flag-fse-fallback-link',
+      'variables' => [
+        'attributes' => [],
+        'title' => NULL,
+        'action' => 'flag',
+        'view_mode' => NULL,
+        'flag' => NULL,
+        'flaggable' => NULL,
+        'flag_deadline_passed' => FALSE,
+        'unflagdeadline_passed' => FALSE,
+        'flag_limit' => NULL,
+        'flag_current' => NULL,
+        'flag_remaining' => NULL,
+        'flag_full' => NULL,
+      ],
+    ],
+    'views_view_unformatted__who_flag_slot' => [
+      'base hook' => 'views_view_unformatted',
+    ],
+    // Template pour le champ username.
+    'views_view_field__who_flag_slot__name' => [
+      'base hook' => 'views_view_field',
+    ],
+    'entity_print__view__flagging_index' => [
+      'template' => 'entity-print--view--flagging-index',
+      'base hook' => 'entity_print',
+      'variables' => [
+        'view_title' => NULL,
+      ],
+    ],
+    'entity_print__view__flagging_index_per_pole' => [
+      'template' => 'entity-print--view--flagging-index',
+      'base hook' => 'entity_print',
+      'variables' => [
+        'view_title' => NULL,
+      ],
+    ],
+  ];
+}
+
+/**
+ * Implements hook_preprocess_entity_print().
+ */
+function mapam_volunteer_preprocess_entity_print__view__flagging_index(array &$variables) {
+  $view = $variables['content'][0]['#view'];
+  $event_id = $view->argument['field_event']->getValue();
+  $event = \Drupal::entityTypeManager()->getStorage('node')->load($event_id);
+  $variables['view_title'] = t('Planning for @label', ['@label' => $event->label()]);
+}
+
+/**
+ * Implements hook_preprocess_entity_print().
+ */
+function mapam_volunteer_preprocess_entity_print__view__flagging_index_per_pole(array &$variables) {
+  $view = $variables['content'][0]['#view'];
+  $pole_id = $view->argument['field_pole']->getValue();
+  $pole = \Drupal::entityTypeManager()->getStorage('node')->load($pole_id);
+  $variables['view_title'] = t('Planning for @label', ['@label' => $pole->label()]);
+}
+
+/**
+ * Implements hook_theme_suggestions_HOOK().
+ */
+function mapam_volunteer_theme_suggestions_entity_print(array $variables) {
+  $suggestions = [];
+  // Get the render array being printed.
+  if (!empty($variables['content'][0]['#view'])) {
+    /** @var \Drupal\views\ViewExecutable $view */
+    $view = $variables['content'][0]['#view'];
+    if ($view && $view->id()) {
+      // Add a suggestion based on the view machine name.
+      $suggestions[] = 'entity_print__view__' . $view->id();
+
+      // Also allow display-based suggestion (e.g. page, block).
+      if ($view->current_display) {
+        $suggestions[] = 'entity_print__view__' . $view->id() . '__' . $view->current_display;
+      }
+    }
+  }
+  return $suggestions;
+}
+
+/**
+ * Implements hook_preprocess_entity_print() for entity-print templates.
+ *
+ * See https://www.drupal.org/project/commerce/issues/2831952#comment-13993663.
+ */
+function mapam_volunteer_preprocess_entity_print(&$vars) {
+  if ($vars['theme_hook_original'] == 'entity_print__view__planning_table') {
+    if (isset($vars['content'][0][0]['#theme'])) {
+      $vars['content'][0][0]['#theme'] = 'planning_table__entity_print__view';
+    }
+    if (isset($vars['content'][0]['#theme'])) {
+      $vars['content'][0]['#theme'] = 'planning_table__entity_print__view';
+    }
+  }
+}
+
+/**
+ * Implements hook_theme_suggestions_item_list_alter() for form templates.
+ */
+function mapam_volunteer_theme_suggestions_item_list_alter(array &$suggestions, array $variables, $hook) {
+
+  if (isset($variables['element']['#id'])) {
+    $id = str_replace("-", "_", $variables['element']['#id']);
+    $suggestions[] = $hook . '__' . $id;
+  }
+}
+
+/**
+ * Implements hook_entity_presave().
+ */
+function mapam_volunteer_entity_presave(EntityInterface $entity) {
+  // Only act on flagging entities.
+  if ($entity instanceof Flagging) {
+    $flag = $entity->getFlag();
+    $flaggable = $entity->getFlaggable();
+
+    // Skip check for administrators.
+    $account = \Drupal::currentUser();
+    if ($account->hasPermission('administer flaggings')) {
+      return;
+    }
+
+    // Only apply to your flag.
+    if ($flag->id() !== 'volunteer') {
+      return;
+    }
+
+    // Check limit field exists and has a value.
+    if (!$flaggable->hasField('field_flag_limit') || $flaggable->get('field_flag_limit')->isEmpty()) {
+      return;
+    }
+
+    $limit = (int) $flaggable->get('field_flag_limit')->value;
+
+    if ($limit > 0) {
+      // Count how many users already flagged this entity.
+      $count = \Drupal::entityQuery('flagging')
+        ->accessCheck(FALSE)
+        ->condition('flag_id', $flag->id())
+        ->condition('entity_type', $flaggable->getEntityTypeId())
+        ->condition('entity_id', $flaggable->id())
+        ->count()
+        ->execute();
+
+      if ($count >= $limit) {
+        \Drupal::messenger()->addWarning(t('There are no more available spots for this item.'));
+
+        throw new EntityStorageException('Flag limit reached: blocking save, but silently.');
+      }
+    }
+  }
+}
+
+/**
+ * Get the count of flag for an entity.
+ */
+function mapam_volunteer_get_current_flag_count($entity) {
+  $connection = Database::getConnection();
+
+  return (int) $connection->select('flag_counts', 'fc')
+    ->condition('fc.flag_id', 'volunteer')
+    ->condition('fc.entity_type', $entity->getEntityTypeId())
+    ->condition('fc.entity_id', $entity->id())
+    ->fields('fc', ['count'])
+    ->execute()
+    ->fetchField();
+}
+
+/**
+ * Implements template_preprocess_THEME().
+ */
+function template_preprocess_flag_fse_link(&$variables) {
+
+  // Change modal dialog type.
+  $variables['attributes']['data-dialog-type'] = 'bootstrap4_modal';
+  $variables['attributes']['class'] = array_merge($variables['attributes']['class'] ?? [], ['text-secondary']);
+
+  // Decode dialog options to inspect them.
+  $dialog_options = Json::decode($variables['attributes']['data-dialog-options']);
+
+  // Add custom classes to the dialog.
+  $modal_classes = ['modal-dialog-centered', 'modal-xl'];
+
+  // Add 'modal-dialog-centered' class to center the dialog vertically.
+  if (isset($dialog_options['dialogClass'])) {
+    // Add the class to existing ones.
+    $dialog_options['dialogClass'] = array_merge($dialog_options['dialogClass'], $modal_classes);
+  }
+  else {
+    $dialog_options['dialogClass'] = $modal_classes;
+  }
+
+  // Re-encode and set the modified dialog options.
+  $variables['attributes']['data-dialog-options'] = Json::encode($dialog_options);
+}
+
+/**
+ * Implements template_preprocess_THEME().
+ */
+function template_preprocess_flag_fse_fallback_link(&$variables) {
+  $flag = $variables['flag'];
+  $entity = $variables['flaggable'];
+  $action = $variables['action'];
+  $account = \Drupal::currentUser();
+  if (!$entity || !$entity->hasField('field_flag_limit')) {
+    return;
+  }
+
+  $limit = $entity->get('field_flag_limit')->value;
+  $current = mapam_volunteer_get_current_flag_count($entity);
+
+  $variables['flag_limit'] = $limit ?? 'unlimited';
+  $variables['flag_current'] = $current;
+  $variables['flag_remaining'] = max(0, $limit - $current);
+
+  // Passer aussi une info pour masquer le bouton si complet.
+  $variables['flag_full'] = ($limit > 0 && $current >= $limit);
+
+  // Only check for volunteer flag.
+  if ($flag->id() == 'volunteer' && $entity) {
+    // Skip check for administrators.
+    if ($account->hasPermission('administer flaggings')) {
+      return;
+    }
+    $volunteer_slot = $entity;
+    $parent_entity = mapam_volunteer_get_parent_entity($volunteer_slot, 'node', 'event');
+
+    if ($parent_entity) {
+      // Check if the flag deadline has passed.
+      if ($action == 'flag' && $parent_entity->hasField('field_date_limit_flag') && !$parent_entity->get('field_date_limit_flag')->isEmpty()) {
+        $date_limit = (int) $parent_entity->get('field_date_limit_flag')->value;
+        $current_timestamp = time();
+        if ($current_timestamp > $date_limit) {
+          $variables['flag_deadline_passed'] = TRUE;
+          $variables['attributes']['class'] = 'flag-deadline-passed';
+          $variables['#attached']['library'][] = 'gin/gin_description_toggle';
+        }
+      }
+
+      // Check if the unflag deadline has passed.
+      if ($action == 'unflag' && $parent_entity->hasField('field_date_limit_unflag') && !$parent_entity->get('field_date_limit_unflag')->isEmpty()) {
+        $date_limit = (int) $parent_entity->get('field_date_limit_unflag')->value;
+        $current_timestamp = time();
+        if ($current_timestamp > $date_limit) {
+          $variables['unflag_deadline_passed'] = TRUE;
+          $variables['attributes']['class'] = 'unflag-deadline-passed';
+          $variables['#attached']['library'][] = 'gin/gin_description_toggle';
+        }
+      }
+    }
+
+  }
+
+}
+
+/**
+ * Implements hook_views_data_alter().
+ */
+function mapam_volunteer_views_data_alter(array &$data) {
+
+  $flags = \Drupal::service('flag')->getAllFlags();
+  $entity_type_manager = \Drupal::entityTypeManager();
+
+  foreach ($flags as $flag) {
+    $entity_type_id = $flag->getFlaggableEntityTypeId();
+
+    $entity_type = $entity_type_manager->getDefinition($entity_type_id);
+    if ($entity_type->hasHandlerClass('views_data')) {
+      $base_table = $entity_type_manager->getHandler($entity_type_id, 'views_data')->getViewsTableForEntityType($entity_type);
+      $data[$base_table]['entity_flag_count'] = [
+        'field' => [
+          'title' => t('Entity Flag Count'),
+          'help' => t('Display flagged count for an entity (return 0 for unflaged entity)'),
+          'id' => 'entity_flag_count',
+        ],
+      ];
+    }
+  }
+
+  // Until this issue is fixed.
+  // see : https://www.drupal.org/project/flag/issues/2723703
+  /** @var \Drupal\Core\Entity\EntityFieldManagerInterface $entity_field_manager */
+  $entity_type_manager = \Drupal::entityTypeManager();
+  foreach (Flag::loadMultiple() as $flag_id => $flag) {
+    /** @var \Drupal\flag\Entity\Flag $flag */
+    $entity_type = $entity_type_manager->getDefinition($flag->getFlaggableEntityTypeId());
+    if ($base = $entity_type->getDataTable() ?: $entity_type->getBaseTable()) {
+      // Add a relationship for non-bundable entities, and for bundable
+      // entities of all bundle types.
+      $data['flagging']['flag_' . $flag_id]['relationship'] = [
+        'title' => $entity_type->getLabel() . ': ' . $flag->label,
+        'help' => t('The %entity_type this %flag_label flagging belongs to.', [
+          '%entity_type' => $entity_type->getLabel(),
+          '%flag_label' => $flag->label,
+        ]),
+        'base' => $base,
+        'base field' => $entity_type->getKey('id'),
+        'relationship field' => 'entity_id',
+        'id' => 'standard',
+        'label' => $entity_type->getLabel(),
+        'extra' => [
+          [
+            'field' => 'flag_id',
+            'value' => $flag_id,
+            'table' => 'flagging',
+          ],
+        ],
+      ];
+
+      // Add a relationship for bundable entities for each bundle type.
+      $bundles = $flag->getBundles();
+      foreach ($bundles as $bundle_id) {
+        $data['flagging']['flag_' . $flag_id . '_' . $bundle_id]['relationship'] = [
+          'title' => $entity_type->getLabel() . ': ' . $flag->label . ': ' . $bundle_id,
+          'help' => t('The %entity_type of type %bundle_id this %flag_label flagging belongs to.', [
+            '%entity_type' => $entity_type->getLabel(),
+            '%bundle_id' => $bundle_id,
+            '%flag_label' => $flag->label,
+          ]),
+          'base' => $base,
+          'base field' => $entity_type->getKey('id'),
+          'relationship field' => 'entity_id',
+          'id' => 'standard',
+          'label' => $entity_type->getLabel(),
+          'extra' => [
+            [
+              'field' => 'flag_id',
+              'value' => $flag_id,
+              'table' => 'flagging',
+            ],
+            [
+              'field' => 'type',
+              'value' => $bundle_id,
+              'table' => 'node_field_data',
+            ],
+          ],
+        ];
+      }
+    }
+  }
+
+  // Add Count Flags by Pole field.
+  $data['node_field_data']['count_flags_by_pole'] = [
+    'field' => [
+      'title' => t('Count of flags by pole'),
+      'help' => t('Display the count of flags for all timeslots linked to a pole.'),
+      'id' => 'count_flags_by_pole',
+    ],
+  ];
+
+  // Add Count Flags Limit by Pole field.
+  $data['node_field_data']['count_flags_limit_by_pole'] = [
+    'field' => [
+      'title' => t('Count of flags limit by pole'),
+      'help' => t('Display the count of flags limit for all timeslots linked to a pole.'),
+      'id' => 'count_flags_limit_by_pole',
+    ],
+  ];
+
+  // Add Calculate Volunteer Ratio field.
+  $data['node_field_data']['calculate_volunteer_ratio'] = [
+    'field' => [
+      'title' => t('Calculate volunteer ratio'),
+      'help' => t('Display the volunteer ratio for all timeslots linked to a pole.'),
+      'id' => 'calculate_volunteer_ratio',
+    ],
+  ];
+}
+
+/**
+ * Implements hook_flag_action_access().
+ */
+function mapam_volunteer_flag_action_access($action, FlagInterface $flag, AccountInterface $account, ?EntityInterface $flaggable = NULL) {
+
+  if ($flag->id() == 'volunteer' && $action == 'unflag') {
+
+    // Allow users with 'administer flaggings' permission to always unflag.
+    if ($account->hasPermission('administer flaggings')) {
+      return AccessResult::allowed()->addCacheableDependency($flag);
+    }
+
+    $volunteer_slot = $flaggable;
+    $parent_entity = mapam_volunteer_get_parent_entity($volunteer_slot, 'node', 'event');
+
+    // Check if the host entity has the unflag deadline field.
+    if ($parent_entity->hasField('field_date_limit_unflag') && !$parent_entity->get('field_date_limit_unflag')->isEmpty()) {
+      $date_limit = (int) $parent_entity->get('field_date_limit_unflag')->value;
+
+      $current_timestamp = time();
+
+      // If the deadline has passed, forbid unflagging.
+      if ($current_timestamp > $date_limit) {
+        static $message_displayed = FALSE;
+        if (!$message_displayed) {
+          \Drupal::messenger()->addWarning(t('The deadline to unregister has passed.'));
+          $message_displayed = TRUE;
+        }
+        return AccessResult::forbidden()->addCacheableDependency($flag);
+      }
+    }
+  }
+
+  // Return neutral to allow other access checks.
+  return AccessResult::neutral();
+}
+
+/**
+ * Implements hook_entity_extra_field_info().
+ */
+function mapam_volunteer_entity_extra_field_info() {
+
+  $extra = [];
+
+  foreach (NodeType::loadMultiple() as $bundle) {
+
+    $extra['node'][$bundle->id()]['display']['title_field'] = [
+      'label'       => t('Title'),
+      'description' => t('Title field'),
+      'weight'      => 100,
+      'visible'     => TRUE,
+    ];
+  }
+
+  $extra['node']['volunteer_slot']['display']['volunteers'] = [
+    'label'       => t('Volunteers'),
+    'description' => t('Volunteers flag field'),
+    'weight'      => 100,
+    'visible'     => TRUE,
+  ];
+
+  $extra['taxonomy_term']['vis_group']['display']['title_field'] = [
+    'label'       => t('Title'),
+    'description' => t('Title field'),
+    'weight'      => 100,
+    'visible'     => TRUE,
+  ];
+
+  return $extra;
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_view().
+ */
+function mapam_volunteer_node_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
+
+  // You could get the node ID or anything else
+  // you want from the node object here.
+  $title = $entity->getTitle();
+
+  if ($display->getComponent('title_field')) {
+
+    $build['title_field'] = [
+      '#type'     => 'inline_template',
+      '#template' => '<h1>{{ title }}</h1>',
+      '#context'  => [
+        'title' => $title,
+      ],
+    ];
+  }
+
+  // Get all volunteer flaggings for this node.
+  if ($display->getComponent('volunteers')) {
+    $flag = Flag::load('volunteer');
+    $flaggings = \Drupal::entityTypeManager()
+      ->getStorage('flagging')
+      ->loadByProperties([
+        'flag_id' => $flag->id(),
+        'entity_type' => 'node',
+        'entity_id' => $entity->id(),
+      ]);
+
+    $build['volunteers'] = [
+      '#theme' => 'item_list',
+      '#title' => t('Volunteers'),
+      '#items' => [],
+    ];
+
+    /** @var \Drupal\flag\FlaggingInterface $flagging */
+    foreach ($flaggings as $flagging) {
+      $user = User::load($flagging->getOwnerId());
+      $build['volunteers']['#items'][] = $user->getDisplayName();
+    }
+  }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_view().
+ */
+function mapam_volunteer_taxonomy_term_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
+  $name = $entity->getName();
+
+  if ($display->getComponent('title_field')) {
+
+    $build['title_field'] = [
+      '#type'     => 'inline_template',
+      '#template' => '<h3>{{ name }}</h3>',
+      '#context'  => [
+        'name' => $name,
+      ],
+    ];
+  }
+}
+
+/**
+ * Helper function to get the parent entity of a given entity.
+ *
+ * @param \Drupal\Core\Entity\EntityInterface $entity
+ *   The child entity.
+ * @param string $parent_type
+ *   The parent entity type ID. Default is 'node'.
+ * @param string $parent_bundle
+ *   The parent entity bundle. Default is 'event'.
+ *
+ * @return \Drupal\Core\Entity\EntityInterface|null
+ *   The parent entity if found, NULL otherwise.
+ */
+function mapam_volunteer_get_parent_entity(EntityInterface $entity, $parent_type = 'node', $parent_bundle = 'event') {
+  // Use the back reference service to find the parent event.
+  $back_reference_service = \Drupal::service('entity_back_reference.back_reference_finder');
+  $back_ref_field = $back_reference_service->getReferencingFieldList('node', $entity->bundle());
+
+  if (!empty($back_ref_field)) {
+    // Loop through all the field config where our entity has been referenced.
+    foreach ($back_ref_field as $fieldConfig) {
+      // Load all entities referencing the volunteer slot.
+      $referencing_entities = $back_reference_service->loadBackReferencedEntities($fieldConfig, $entity->id());
+    }
+  }
+
+  // Filter to find the parent event node.
+  foreach ($referencing_entities as $referencing_entity) {
+    if ($referencing_entity->getEntityTypeId() === $parent_type &&
+      $referencing_entity->bundle() === $parent_bundle) {
+      return $referencing_entity;
+    }
+  }
+
+  return NULL;
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function mapam_volunteer_form_node_timeslot_recur_form_alter(array &$form, FormStateInterface $form_state, $form_id) {
+  // Remove the default "Add another item" button.
+  unset($form['field_smart_date_recur']['widget']['add_more']);
+
+  // Add form elements for each allowed field.
+  $form['common_fields'] = [
+    '#title' => t('Common fields'),
+    '#type' => 'fieldset',
+    '#open' => TRUE,
+    '#description' => t('These fields will be copied to all created timeslots.'),
+    '#weight' => 10,
+    '#group' => 'content',
+  ];
+
+  // Define allowed fields to move in the common fieldset.
+  $allowed_fields = ['field_pole', 'field_flag_limit', 'field_event'];
+  foreach ($allowed_fields as $field_name) {
+    $form['common_fields'][$field_name] = $form[$field_name];
+    $form['common_fields'][$field_name]['#group'] = 'common_fields';
+    unset($form[$field_name]);
+  }
+
+  // Store allowed fields in form state.
+  $form_state->set('allowed_fields', $allowed_fields);
+
+  // Add a submit handler to process the common fields only for new entity.
+  $form['actions']['submit']['#submit'][] = 'mapam_volunteer_bulk_timeslot_form_submit';
+
+}
+
+/**
+ * Submit handler for the bulk timeslot form to process common fields.
+ */
+function mapam_volunteer_bulk_timeslot_form_submit($form, FormStateInterface $form_state) {
+  $created_count = 0;
+
+  $entity = $form_state->getFormObject()->getEntity();
+
+  foreach ($entity->get('field_smart_date_recur') as $delta => $item) {
+    $value = $item->getValue();
+
+    $start = $value['value'];
+    $end = $value['end_value'];
+
+    $timeslot_data = [
+      'type' => 'timeslot',
+      'title' => $entity->label() . ' #' . ($delta + 1),
+      'field_smart_date' => [
+        'value' => $start,
+        'end_value' => $end,
+      ],
+      'field_event' => $entity->get('field_event')->target_id,
+      'field_pole' => $entity->get('field_pole')->target_id,
+      'field_flag_limit' => $entity->get('field_flag_limit')->value,
+    ];
+
+    $timeslot = Node::create($timeslot_data);
+    $timeslot->save();
+
+    $created_count++;
+  }
+  \Drupal::messenger()->addStatus(t('@count timeslots have been created.', ['@count' => $created_count]));
+}

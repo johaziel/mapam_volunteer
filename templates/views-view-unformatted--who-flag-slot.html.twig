@@ -1,0 +1,6 @@
+{% for row in rows %}
+  {{- row.content -}}
+  {%- if not loop.last -%},&nbsp;
+  {%- else -%}.
+  {%- endif -%}
+{% endfor %}

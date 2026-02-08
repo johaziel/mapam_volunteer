@@ -1,0 +1,135 @@
+
+.views-view-table table tbody td{
+  padding: var(--gin-spacing-density-xs) var(--gin-spacing-xs);
+}
+
+@media (min-width: 61em) {
+  .gin-layer-wrapper {
+    padding: var(--gin-spacing-s);
+  }
+}
+
+.color_field__swatch{
+  float:left;
+}
+
+.view-volunteers-index-table h4 {
+  margin: var(--space-xs) 0 var(--space-xs);
+  font-size: var(--gin-font-size-xl);
+  font-weight: var(--gin-font-weight-semibold);
+}
+
+.view-display-id-block_2 .gin-layer-wrapper{
+  border:0;
+  box-shadow:none;
+  padding:0;
+  background: inherit;
+}
+th.views-field-title{
+  width:250px;
+}
+
+ .form-item {
+  margin-block: var(--space-xs);
+}
+/**
+ * CSS for data_range_duration widget
+ **/
+/*
+
+.field--type-daterange .fieldset__wrapper {
+  margin: 0 5px;
+  display: inline-flex;
+  gap: 3px;
+  width:100%;
+}
+[data-drupal-selector="edit-date-0-end-value"]{
+  padding-top: 20px
+}
+[data-drupal-selector="edit-date-0"] .fieldset__label{
+  display:none;
+}
+[data-drupal-selector="edit-date-0"] .form-item{
+  margin-block: 0;
+}
+
+[data-drupal-selector="edit-date-0-value"],
+[data-drupal-selector="edit-date-0-end-value"]{
+  margin-block: var(--space-xs);
+  flex:3;
+}
+
+
+.js-form-type-duration {
+  flex:3;
+}
+
+.end_type{
+  margin-top: 10px;
+  margin-right: 10px;
+  flex:1
+
+}
+*/
+/******************/
+.flag-fse-fallback-link .unlimited{
+  font-size: 0.75rem;
+  color: var(--bs-gray-600);
+}
+.flag-fse-fallback-link .remaining{
+  font-size: 0.75rem;
+  color: var(--bs-gray-600);
+}
+.flag-fse-fallback-link .full{
+  font-size: 0.75rem;
+  color: var(--bs-warning);
+}
+.flag-fse-fallback-link .form-item__description{
+  font-size: 0.75rem;
+  color: var(--bs-warning);
+}
+.flag-fse-fallback-link .help-icon__description-container label {
+  cursor: pointer;
+  color: var(--bs-gray-600);
+  text-decoration: line-through;
+}
+.flag-fse-fallback-link .help-icon__description-toggle {
+  margin-inline-start: 6px;
+  margin-top:5px;
+}
+
+.flag-fse-fallback-link .help-icon__description-toggle:before {
+  background-color: var(--bs-gray-400);
+}
+.flag-fse-fallback-link .help-icon__description-toggle:hover:before {
+  background-color: var(--bs-gray-600);
+}
+/*******************
+ *
+ **/
+
+ .view-manage-volunteer-flag th.views-field-date{
+  width:350px;
+ }
+  .view-manage-volunteer-flag th.views-field-color__color{
+  width:50px;
+ }
+
+/****************/
+
+.views-field-field-color,
+.views-field-field-color-1{
+  width:50px;
+}
+.views-field-field-daterange,
+.views-field-field-daterange-1{
+  width: 140px;
+}
+.views-field-pole-title{
+  width: 160px;
+}
+
+.views-field-flag-volunteer-flag,
+.views-field-search-api-rendered-item{
+  width: 130px;
+}

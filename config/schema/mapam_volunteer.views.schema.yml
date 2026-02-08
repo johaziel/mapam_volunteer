@@ -1,0 +1,4 @@
+# Schema for the views plugins of the Mapam Volunteer module.
+views.relationship.flagged_entity:
+  type: views_relationship
+  label: 'Flagged entity'

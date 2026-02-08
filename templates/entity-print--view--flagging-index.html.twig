@@ -1,0 +1,140 @@
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <title>{{ title }}</title>
+  <style type="text/css">
+    body {
+      font-size: 10px;
+      font-family: 'DejaVu Sans', sans-serif;
+      padding: 0px;
+      color: black;
+    }
+
+    td img {
+      max-width: none;
+    }
+    table {
+      min-width: 100%;
+    }
+
+    h3.parent-label {
+      margin-top: 10px;
+      padding-left: 20px;
+      color: #676767ff;
+      border: 1px solid #c7c7c7ff;
+      padding: 5px;
+      text-transform: uppercase;
+      background-color: #f7f6f6;
+      border-radius : 20px ;
+      text-align: center;
+    }
+    summary {
+      font-weight: bolder;
+      font-size: 12px;
+      margin:10px 0;
+    }
+    .views-field-row-label {
+      text-align: left;
+      width: 60px;
+      font-weight: normal;
+    }
+
+    .views-field-column-label{
+      text-align: center;
+      font-weight: normal;
+      width: 40px;
+    }
+
+    table.views-crosstab-table {
+      /* Change these properties */
+      border-radius: 5px;
+      /* Don't change these properties */
+      border-spacing: 0;
+      border-collapse: separate;
+      border: 1px solid rgb(178, 178, 178);
+      overflow: hidden;
+    }
+    /* Apply a border to the right of all but the last column */
+    table.views-crosstab-table th,
+    table.views-crosstab-table td {
+      border-right: 1px solid rgb(178, 178, 178);
+    }
+
+    table.views-crosstab-table > thead > tr > th {
+      background-color: #dededfff;
+    }
+
+    /* Apply a border to the right of all but the last column */
+    table.views-crosstab-table th:last-child,
+    table.views-crosstab-table td:last-child {
+      border-right: 0;
+    }
+    /* Apply a border to the bottom of all but the last row */
+    table.views-crosstab-table>thead>tr>th,
+    table.views-crosstab-table>thead>tr>td,
+    table.views-crosstab-table>tbody>tr>th,
+    table.views-crosstab-table>tbody>tr>td,
+    table.views-crosstab-table>tfoot>tr>th,
+    table.views-crosstab-table>tfoot>tr>td,
+    table.views-crosstab-table>tr>td,
+    table.views-crosstab-table>tr>th,
+    table.views-crosstab-table>thead,
+    table.views-crosstab-table>tbody,
+    table.views-crosstab-table>tfoot {
+      border-bottom: 1px solid rgb(178, 178, 178);
+    }
+
+    /* Apply a border to the bottom of all but the last row */
+    table.views-crosstab-table>tbody>tr:last-child>th,
+    table.views-crosstab-table>tbody>tr:last-child>td,
+    table.views-crosstab-table>tfoot>tr:last-child>th,
+    table.views-crosstab-table>tfoot>tr:last-child>td,
+    table.views-crosstab-table>tr:last-child>td,
+    table.views-crosstab-table>tr:last-child>th,
+    table.views-crosstab-table>thead:last-child,
+    table.views-crosstab-table>tbody:last-child,
+    table.views-crosstab-table>tfoot:last-child {
+      border-bottom: 0;
+    }
+    #footer {
+      position: fixed;
+      bottom: -60px;
+      left: 0px;
+      right: 0px;
+      background-color: #ffffff;
+      height: 50px;
+      text-align: center;
+    }
+      #footer .page:after {
+        content: counter(page, decimal);
+      }
+  </style>
+
+</head>
+<body>
+  <footer id="footer">
+    <span class="page"> </span> / @@PC
+    <script type="text/php">
+      if ( isset($pdf) ) {
+        $h = $pdf->get_height();
+
+        $size = 6;
+        $font_bold = $fontMetrics->getFont("helvetica", "bold");
+        $text_height = $fontMetrics->getFontHeight($font_bold, $size);
+        $y = $h - $text_height - 24;
+
+        // generated text written to every page after rendering
+        $pdf->page_text(550, $y, "Page {PAGE_NUM} of {PAGE_COUNT}", $font_bold, $size, [0, 0, 0]);
+      }
+    </script>
+  </footer>
+  <div class="header">
+    <h1>{{ view_title }}</h1>
+    <div class="date-export">{{ date }}</div>
+  </div>
+  <div class="page">
+    {{ content }}
+  </div>
+</body>
+</html>

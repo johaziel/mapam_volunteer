@@ -1,0 +1,24 @@
+services:
+  mapam_volunteer.flag_subscriber:
+    class: Drupal\mapam_volunteer\EventSubscriber\FlagConflictSubscriber
+    arguments: ['@current_user', '@flag', '@state', '@database']
+    tags:
+      - { name: event_subscriber }
+  mapam_volunteer.flag_fse_new_user_subscriber:
+    class: Drupal\mapam_volunteer\EventSubscriber\FlagFseNewUserSubscriber
+    arguments: ['@entity_type.manager']
+    tags:
+      - { name: event_subscriber }
+  mapam_volunteer.local_task_access:
+    class: '\Drupal\mapam_volunteer\Plugin\views\access\LocalTaskAccess'
+    parent: default_plugin_manager
+  mapam_volunteer.local_task_event_access:
+    class: '\Drupal\mapam_volunteer\Plugin\views\access\LocalTaskEventAccess'
+    parent: default_plugin_manager
+  mapam_volunteer.local_task_pole_access:
+    class: '\Drupal\mapam_volunteer\Plugin\views\access\LocalTaskPoleAccess'
+    parent: default_plugin_manager
+  mapam_volunteer.print_css_alter_subscriber:
+    class: Drupal\mapam_volunteer\EventSubscriber\EntityPrintSubscriber
+    tags:
+    - { name: event_subscriber }

@@ -1,0 +1,134 @@
+body {
+  font-size: 10px;
+  color:red !important
+}
+
+.page {
+  padding: 0px;
+  color: rgb(24, 24, 24);
+  font-family: Arial, sans-serif;
+}
+
+.page img {
+  max-width: 100%;
+  height: auto;
+}
+
+.page td img {
+  max-width: none;
+}
+table {
+  min-width: 100%;
+}
+#order-items {
+  min-width: 100%;
+  margin-top: 20px;
+}
+
+#order-items th {
+  background-color: #dfe0e0;
+  color: #262626;
+  font-weight: bold;
+}
+#order-items td,
+#order-items th {
+  padding: 5px;
+}
+
+.order-totals {
+  width: 33%;
+  padding: 10px;
+}
+
+#order-footer {
+  width: 100%;
+  margin: 0 auto;
+  position: absolute;
+  bottom: 10px;
+  text-align: center;
+}
+
+.item td {
+  text-align: right;
+}
+
+td.item-label {
+  text-align: left;
+}
+.items-type-label {
+  font-weight: bold;
+  color: #262626;
+  background-color: #f7f6f6;
+}
+.tva-adjustement {
+  width: 50%;
+}
+
+.tva-adjustement table {
+  width: 100%;
+  margin-top: 20px;
+  text-align: center;
+}
+
+table.invoice-table,
+table.invoice-table td,
+table.invoice-items,
+table.invoice-items th,
+table.invoice-items td {
+  border: 0;
+}
+table.invoice-items th {
+  padding: 4px;
+}
+table.invoice-items td {
+  padding: 5px;
+}
+
+table.rounded-corners {
+  /* Change these properties */
+  --border: 1px solid rgb(178, 178, 178);
+  border-radius: 5px;
+  /* Don't change these properties */
+  border-spacing: 0;
+  border-collapse: separate;
+  border: var(--border);
+  overflow: hidden;
+}
+/* Apply a border to the right of all but the last column */
+table.rounded-corners th,
+table.rounded-corners td {
+  border-right: var(--border);
+}
+
+/* Apply a border to the right of all but the last column */
+table.rounded-corners th:last-child,
+table.rounded-corners td:last-child {
+  border-right: 0;
+}
+/* Apply a border to the bottom of all but the last row */
+table.rounded-corners>thead>tr>th,
+table.rounded-corners>thead>tr>td,
+table.rounded-corners>tbody>tr>th,
+table.rounded-corners>tbody>tr>td,
+table.rounded-corners>tfoot>tr>th,
+table.rounded-corners>tfoot>tr>td,
+table.rounded-corners>tr>td,
+table.rounded-corners>tr>th,
+table.rounded-corners>thead,
+table.rounded-corners>tbody,
+table.rounded-corners>tfoot {
+  border-bottom: var(--border);
+}
+
+/* Apply a border to the bottom of all but the last row */
+table.rounded-corners>tbody>tr:last-child>th,
+table.rounded-corners>tbody>tr:last-child>td,
+table.rounded-corners>tfoot>tr:last-child>th,
+table.rounded-corners>tfoot>tr:last-child>td,
+table.rounded-corners>tr:last-child>td,
+table.rounded-corners>tr:last-child>th,
+table.rounded-corners>thead:last-child,
+table.rounded-corners>tbody:last-child,
+table.rounded-corners>tfoot:last-child {
+  border-bottom: 0;
+}

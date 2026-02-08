@@ -1,0 +1,37 @@
+name: 'Mapam Volunteer'
+type: module
+description: 'Module for Mapam Volunteer custom functionalities.'
+core_version_requirement: ^8 || ^9 || ^10
+package: Mapam
+version: 1.0.0
+dependencies:
+  - vistimeline_command:vistimeline_command
+  - search_api:search_api
+  - search_api:search_api_db
+  - better_exposed_filters:better_exposed_filters
+  - facets:facets_exposed_filters
+  - flag:flag
+  - views_flag_refresh:views_flag_refresh
+  - flag_search_api:flag_search_api
+  - auto_entitylabel:auto_entitylabel
+  - daterange_compact:daterange_compact
+  - views_field_comparison:views_field_comparison
+  - viewfield:viewfield
+  - views_field_view:views_field_view
+  - views_vis_timeline:views_vis_timeline
+  - duration_field:duration_field
+  - exclude_node_title:exclude_node_title
+  - color_field:color_field
+  - token:token
+  - field_layout:field_layout
+  - layout_discovery:layout_discovery
+  - flag_fse:flag_fse
+  - dashboard:dashboard
+  - ds:ds
+  - views_local_tasks:views_local_tasks
+  - entity_print:entity_print_views
+  - twig_tweak:twig_tweak
+  - smart_date:smart_date
+  - smart_date:smart_date_recur
+  - bootstrap4_modal:bootstrap4_modal
+  #- date_range_extra:date_range_extra

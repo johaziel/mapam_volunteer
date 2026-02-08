@@ -1,0 +1,91 @@
+{#
+/**
+ * @file
+ * Overriding base flag link template
+ *
+ * Available variables:
+ * - attributes: HTML attributes for the link element.
+ * - title: The flag link title.
+ * - action: 'flag' or 'unflag'
+ * - flag: The flag object.
+ * - flaggable: The flaggable entity.
+ * - flag_deadline_passed : boolean
+ * - unflag_deadline_passed : boolean
+ */
+#}
+
+{# Set nofollow to prevent search bots from crawling anonymous flag links #}
+{% set attributes = attributes.setAttribute('rel', 'nofollow') %}
+{# Depending on the flag action, set the appropriate action class. #}
+{% if action == 'unflag' %}
+    {% set action_class = 'action-unflag' %}
+{% else %}
+    {% set action_class = 'action-flag' %}
+{% endif %}
+
+{# Set the remaining Flag CSS classes. #}
+{%
+  set classes = [
+    'flag-fse-fallback-link',
+    action_class
+  ]
+%}
+{# Add classes to attributes #}
+{% set attributes = attributes.addClass(['btn', 'btn-outline-info']) %}
+{% set flag_status = false %}
+
+<div class="{{classes|join(' ')}}">
+  {% if action == 'unflag' %}
+    {% if unflag_deadline_passed %}
+    <div class="help-icon__description-container">
+      <div class="help-icon">
+        <label>{{ title }}</label>
+        <button class="help-icon__description-toggle"></button>
+      </div>
+      <div class="help-icon__description-toggle">
+        
+        <div class="form-item__description visually-hidden"> 
+          {{ 'Registration deadline has passed, please contact admin if you want to unflag'|t }}
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div><a{{ attributes }}>{{ title }}</a></div>
+
+    {% endif %}
+  {% else %}
+    {% if flag_deadline_passed %}
+      <div class="help-icon__description-container">
+        <div class="help-icon">
+          <label>{{ title }}</label>
+          <button class="help-icon__description-toggle"></button>
+        </div>
+        <div class="help-icon__description-toggle">
+          
+          <div class="form-item__description visually-hidden"> 
+            {{ 'Registration deadline has passed, you cannot flag this slot anymore'|t }}
+          </div>
+        </div>
+      </div>
+    {% else %}
+      {% if flag_full %}
+        <div class="flag-status full">
+          {{ 'No more space available.'|t() }}
+        </div>
+      {% else %}
+        <a{{ attributes }}>{{ title }}</a>
+        {% if flag_status %}
+          {% if flag_limit == 'unlimited' %}
+            <div class="flag-status unlimited">
+              {{ 'Unlimited.'|t() }}
+            </div>
+          {% else %}
+            <div class="flag-status remaining">
+              {{ '@flag_remaining remaining slots '|t({'@flag_remaining':flag_remaining}) }}
+            </div>
+          {% endif %}
+        {% endif %}
+      {% endif %}
+    {% endif %}
+  {% endif %}
+</div>
