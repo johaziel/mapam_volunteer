@@ -1,0 +1,13 @@
+mapam_volunteer.node.dashboard:
+  path: '/node/{node}/dashboard'
+  defaults:
+    _controller: '\Drupal\mapam_volunteer\Controller\NodeDashboardController::view'
+    _title_callback: '\Drupal\mapam_volunteer\Controller\NodeDashboardController::title'
+  requirements:
+    _permission: 'access node dashboard'
+    _entity_access: 'node.view'
+    node: \d+
+  options:
+    parameters:
+      node:
+        type: entity:node

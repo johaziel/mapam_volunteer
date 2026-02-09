@@ -82,7 +82,7 @@ class LocalTaskPoleAccessController extends ControllerBase {
         $bundle = $node->bundle();
       }
     }
-    // The first part ensures the local task (tab) is shown on node pages of type 'pole'.
+    // The first part ensures the local task is shown on node pages 'pole'.
     // The second part makes sure the tab also displays on the view itself.
     // (the view route is view.VIEW_MACHINE_NAME.DISPLAY_MACHINE_NAME)
     return AccessResult::allowedIf(

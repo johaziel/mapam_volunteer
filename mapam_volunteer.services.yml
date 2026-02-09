@@ -22,3 +22,11 @@ services:
     class: Drupal\mapam_volunteer\EventSubscriber\EntityPrintSubscriber
     tags:
     - { name: event_subscriber }
+  mapam_volunteer.editor_redirect_subscriber:
+    class: Drupal\mapam_volunteer\EventSubscriber\RoleRedirectSubscriber
+    arguments: 
+      - '@current_user'
+      - '@current_route_match'
+      - '@request_stack'
+    tags:
+      - { name: event_subscriber }

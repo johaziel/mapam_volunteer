@@ -1,0 +1,5 @@
+# permission to access node dashboard
+access node dashboard:
+  title: 'Access Node Dashboard'
+  description: 'Allows users to access the dashboard for nodes.'
+  restrict access: true
