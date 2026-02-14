@@ -74,6 +74,7 @@ class RoleRedirectSubscriber implements EventSubscriberInterface {
    *   The request event.
    */
   public function onRequest(RequestEvent $event) {
+
     // Only handle main requests.
     if (!$event->isMainRequest()) {
       return;
@@ -94,8 +95,8 @@ class RoleRedirectSubscriber implements EventSubscriberInterface {
       return;
     }
 
-    // Check if user has the 'editor' role.
-    if (!$this->currentUser->hasRole('editor')) {
+    // Check if user has the 'access node dashboard' permission.
+    if (!$this->currentUser->hasPermission('access node dashboard')) {
       return;
     }
 
@@ -107,7 +108,7 @@ class RoleRedirectSubscriber implements EventSubscriberInterface {
     }
 
     // Optional: Only redirect for specific content types.
-    if (!in_array($node->bundle(), ['event', 'pole'])) {
+    if (!in_array($node->bundle(), ['event', 'pole', 'timeslot'])) {
       return;
     }
 

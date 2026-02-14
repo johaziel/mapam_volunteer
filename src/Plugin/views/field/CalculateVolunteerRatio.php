@@ -6,8 +6,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\views\Plugin\views\field\NumericField;
 use Drupal\views\ResultRow;
-use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Database\Database;
 
 /**
  * Provides a custom field for a specific content type.
@@ -25,7 +23,7 @@ class CalculateVolunteerRatio extends NumericField {
   protected $entityTypeManager;
 
   /**
-   * Constructs a new PriceDefaultFormatter object.
+   * Constructs a new CalculateVolunteerRatio object.
    *
    * @param array $configuration
    *   A configuration array containing information about the plugin instance.
@@ -49,24 +47,8 @@ class CalculateVolunteerRatio extends NumericField {
       $configuration,
       $plugin_id,
       $plugin_definition,
-      $container->get('entity_type.manager'),
+      $container->get('entity_type.manager')
     );
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function defineOptions() {
-    $options = parent::defineOptions();
-
-    return $options;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function buildOptionsForm(&$form, FormStateInterface $form_state) {
-    parent::buildOptionsForm($form, $form_state);
   }
 
   /**
@@ -74,7 +56,6 @@ class CalculateVolunteerRatio extends NumericField {
    */
   public function query() {
     // Prevent Views from adding this field to the SQL query.
-    // $this->addAdditionalFields([]);.
   }
 
   /**
@@ -96,7 +77,7 @@ class CalculateVolunteerRatio extends NumericField {
       $flag_limit = $timeslot->get('field_flag_limit')->value ?? 0;
       $limits += $flag_limit;
 
-      // If there is a flag limit, count how many users already flagged this timeslot.
+      // Count how many users already flagged timeslot.
       if ($flag_limit) {
         // Count how many users already flagged this timeslot.
         $count = \Drupal::entityQuery('flagging')
@@ -111,21 +92,13 @@ class CalculateVolunteerRatio extends NumericField {
       }
 
     }
+    $percentage = 0;
 
-    if ($limits == 0 && $flags == 0) {
-      $value = 0;
-    }
-    if ($flags >= $limits) {
-      $value = 100;
-    }
     if ($limits > 0) {
-      $value = $flags / $limits * 100;
-    }
-    if ($flags >= $limits) {
-      $value = 100;
+      $percentage = min(100, ($flags / $limits) * 100);
     }
 
-    $value = number_format($value, 0, $this->options['decimal'], $this->options['separator']);
+    $percentage = number_format($percentage, 0, $this->options['decimal'], $this->options['separator']);
     // Check to see if hiding should happen before adding prefix and suffix
     // and before rewriting.
     if ($this->options['hide_empty'] && empty($value) && ($value !== 0 || $this->options['empty_zero'])) {
@@ -133,35 +106,44 @@ class CalculateVolunteerRatio extends NumericField {
     }
 
     // After the hide_empty check NULL values should be treated as a 0 value.
-    $value = $value ?? 0;
-    if (!empty($this->options['set_precision'])) {
-      $precision = $this->options['precision'];
-    }
-    elseif ($decimal_position = strpos($value, '.')) {
-      $precision = strlen($value) - $decimal_position - 1;
-    }
-    else {
-      $precision = 0;
-    }
+    $percentage = $percentage ?? 0;
 
     // Use round first to avoid negative zeros.
-    $value = round($value, $precision);
+    $percentage = round($percentage);
     // Test against both integer zero and float zero.
-    if ($this->options['empty_zero'] && ($value === 0 || $value === 0.0)) {
+    if ($this->options['empty_zero'] && ($percentage === 0)) {
       return '';
     }
 
-    $value = number_format($value, $precision, $this->options['decimal'], $this->options['separator']);
-
-    // If we should format as plural, take the (possibly) translated plural
-    // setting and format with the current language.
-    if (!empty($this->options['format_plural'])) {
-      $value = PluralTranslatableMarkup::createFromTranslatedString($value, $this->options['format_plural_string']);
-    }
-    return $this->sanitizeValue($this->options['prefix'], 'xss')
-
-      . $this->sanitizeValue($value)
-      . $this->sanitizeValue($this->options['suffix'], 'xss');
+    return [
+      '#attached' => [
+        'library' => [
+          'mapam_volunteer/bootstrap',
+        ],
+      ],
+      '#type' => 'container',
+      '#attributes' => [
+        'class' => ['progress'],
+        'title' => $this->t('@flags / @limits volunteers', [
+          '@flags' => $flags,
+          '@limits' => $limits,
+        ]),
+      ],
+      'bar' => [
+        '#type' => 'container',
+        '#attributes' => [
+          'class' => ['progress-bar'],
+          'role' => 'progressbar',
+          'style' => "width: {$percentage}%",
+          'aria-valuenow' => $percentage,
+          'aria-valuemin' => 0,
+          'aria-valuemax' => 100,
+        ],
+        'label' => [
+          '#markup' => $percentage . '%',
+        ],
+      ],
+    ];
   }
 
 }

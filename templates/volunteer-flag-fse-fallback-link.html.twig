@@ -50,8 +50,7 @@
       </div>
     </div>
     {% else %}
-    <div><a{{ attributes }}>{{ title }}</a></div>
-
+      <div><a{{ attributes }}>{{ title }}</a></div>
     {% endif %}
   {% else %}
     {% if flag_deadline_passed %}
@@ -73,7 +72,9 @@
           {{ 'No more space available.'|t() }}
         </div>
       {% else %}
-        <a{{ attributes }}>{{ title }}</a>
+        {% if display_flag_link %}
+          <a{{ attributes }}>{{ title }}</a>
+        {% endif %}
         {% if flag_status %}
           {% if flag_limit == 'unlimited' %}
             <div class="flag-status unlimited">

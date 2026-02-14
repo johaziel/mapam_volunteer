@@ -7,7 +7,6 @@ use Drupal\search_api\Item\ItemInterface;
 use Drupal\search_api\Processor\ProcessorPluginBase;
 use Drupal\search_api\Processor\ProcessorProperty;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\flag\FlagCountManagerInterface;
 
 /**
  * Adds flag limit comparison.

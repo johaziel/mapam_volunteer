@@ -1,0 +1,22 @@
+radix_johaziel:
+  label: Johaziel
+  category: Radix
+  path: layouts/radix_johaziel
+  template: radix-johaziel
+  icon: radix-johaziel.png
+  library: radix_layouts/radix_layouts
+  regions:
+    header:
+      label: Header
+    topcolumn1:
+      label: Top Column 1
+    topcolumn2:
+      label: Top Column 2
+    contentsidebar:
+      label: Content Sidebar
+    content:
+      label: Content
+    footercolumn1:
+      label: Footer Column 1
+    footercolumn2:
+      label: Footer Column 2

@@ -9,8 +9,24 @@
   }
 }
 
-.color_field__swatch{
-  float:left;
+@media (min-width: 61em) {
+  .gin-layer-wrapper {
+    padding: var(--gin-spacing-xs) !important;
+  }
+}
+.gin-layer-wrapper {
+  padding: var(--gin-spacing-xs) !important;
+}
+
+.view-header {
+  margin-block-end: var(--gin-spacing-xxxs) !important;
+}
+.gin-layer-wrapper + .gin-layer-wrapper {
+  margin-block-start: var(--gin-spacing-s) !important;
+}
+
+.gin-layer-wrapper + h2, .views-edit-view .gin-layer-wrapper + .unit-title, .gin-layer-wrapper + h3 {
+  margin-block-start: var(--gin-spacing-m) !important;
 }
 
 .view-volunteers-index-table h4 {
@@ -19,18 +35,57 @@
   font-weight: var(--gin-font-weight-semibold);
 }
 
+#views-bootstrap-slot-by-pole-block-1 .mccoppin{
+  padding: var(--space-xs) 0;
+  border-bottom: 1px solid var(--gin-border-color);
+}
+.field--name-node-title h5{
+  margin: var(--space-xxs) 0 var(--space-xs);
+}
+.field--name-field-primary-contacts .field--name-username h2{
+  margin: 0 5px
+}
+.field--name-field-primary-contacts .panel-panel{
+  padding: 3px;
+}
+#views-bootstrap-pole-timeslots-block-1 .panel-display{
+  border-bottom:1px solid var(--gin-border-color);
+  padding-top:3px;
+}
+#views-bootstrap-pole-timeslots-block-1 .panel-panel{
+  padding:0 2px;
+}
+
+/* Add some space in dashbord layout builder*/
+
+.layout__region .views-element-container{
+  padding: var(--gin-spacing-xxs);
+}
+
+/* Hach for for placolder in message with bootstrap and gin */
+.placeholder {
+  display: inline-block;
+  vertical-align: unset;
+  cursor: pointer;
+  background-color: unset;
+  opacity: 1;
+}
+
+/*
 .view-display-id-block_2 .gin-layer-wrapper{
   border:0;
   box-shadow:none;
   padding:0;
   background: inherit;
 }
+*/
+
 th.views-field-title{
   width:250px;
 }
 
  .form-item {
-  margin-block: var(--space-xs);
+  margin-block: var(--space-xs) !important;
 }
 /**
  * CSS for data_range_duration widget

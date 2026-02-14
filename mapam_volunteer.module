@@ -19,6 +19,7 @@ use Drupal\Core\Entity\EntityStorageException;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\node\Entity\Node;
 use Drupal\Component\Serialization\Json;
+use Drupal\views\ViewExecutable;
 
 /**
  * Implements hook_page_attachments().
@@ -32,13 +33,6 @@ function mapam_volunteer_page_attachments(array &$attachments) {
  */
 function mapam_volunteer_theme($existing, $type, $theme, $path) {
   return [
-    'flag_fse_fallback_link' => [
-      'render element' => 'elements',
-      'base hook' => 'flag_fse_link',
-      'variables' => [
-        'attributes' => [],
-      ],
-    ],
     'flag_fse_fallback_link' => [
       'render element' => 'elements',
       'base hook' => 'flag_fse_fallback_link',
@@ -56,6 +50,7 @@ function mapam_volunteer_theme($existing, $type, $theme, $path) {
         'flag_current' => NULL,
         'flag_remaining' => NULL,
         'flag_full' => NULL,
+        'display_flag_link' => TRUE,
       ],
     ],
     'views_view_unformatted__who_flag_slot' => [
@@ -79,6 +74,19 @@ function mapam_volunteer_theme($existing, $type, $theme, $path) {
         'view_title' => NULL,
       ],
     ],
+    'field__node__field_smart_date__timeslot' => [
+      'base hook' => 'field',
+    ],
+    'field__node__field_primary_contacts__pole' => [
+      'base hook' => 'field',
+    ],
+    'entity_print__view__pole_planning' => [
+      'template' => 'entity-print--view--planning',
+      'base hook' => 'entity_print',
+      'variables' => [
+        'view_title' => NULL,
+      ],
+    ],
   ];
 }
 
@@ -90,6 +98,16 @@ function mapam_volunteer_preprocess_entity_print__view__flagging_index(array &$v
   $event_id = $view->argument['field_event']->getValue();
   $event = \Drupal::entityTypeManager()->getStorage('node')->load($event_id);
   $variables['view_title'] = t('Planning for @label', ['@label' => $event->label()]);
+}
+
+/**
+ * Implements hook_preprocess_entity_print().
+ */
+function mapam_volunteer_preprocess_entity_print__view__pole_planning(array &$variables) {
+  $view = $variables['content'][0]['#view'];
+  $pole_id = $view->argument['field_pole']->getValue();
+  $pole = \Drupal::entityTypeManager()->getStorage('node')->load($pole_id);
+  $variables['view_title'] = t('Planning for @label', ['@label' => $pole->label()]);
 }
 
 /**
@@ -217,6 +235,13 @@ function mapam_volunteer_get_current_flag_count($entity) {
  */
 function template_preprocess_flag_fse_link(&$variables) {
 
+  // Skip modifications for admin_theme (Gin).
+  if ($variables['is_admin']) {
+    $variables['attributes']['class'] = array_merge(
+      $variables['attributes']['class'] ?? [], ['button--primary', 'button']);
+    return;
+  }
+
   // Change modal dialog type.
   $variables['attributes']['data-dialog-type'] = 'bootstrap4_modal';
   $variables['attributes']['class'] = array_merge($variables['attributes']['class'] ?? [], ['text-secondary']);
@@ -252,6 +277,22 @@ function template_preprocess_flag_fse_fallback_link(&$variables) {
     return;
   }
 
+  // Skip modifications for admin_theme (Gin).
+  if ($variables['is_admin']) {
+    $variables['attributes']['class'] = array_merge(
+      $variables['attributes']['class'] ?? [],
+      ['button--small', 'button']
+    );
+    $variables['display_flag_link'] = FALSE;
+  }
+  else {
+    // Add Bootstrap button classes for the default theme.
+    $variables['attributes']['class'] = array_merge(
+      $variables['attributes']['class'] ?? [],
+      ['btn', 'btn-outline-secondary']
+    );
+  }
+
   $limit = $entity->get('field_flag_limit')->value;
   $current = mapam_volunteer_get_current_flag_count($entity);
 
@@ -278,7 +319,7 @@ function template_preprocess_flag_fse_fallback_link(&$variables) {
         $current_timestamp = time();
         if ($current_timestamp > $date_limit) {
           $variables['flag_deadline_passed'] = TRUE;
-          $variables['attributes']['class'] = 'flag-deadline-passed';
+          $variables['attributes']['class'][] = 'flag-deadline-passed';
           $variables['#attached']['library'][] = 'gin/gin_description_toggle';
         }
       }
@@ -289,7 +330,7 @@ function template_preprocess_flag_fse_fallback_link(&$variables) {
         $current_timestamp = time();
         if ($current_timestamp > $date_limit) {
           $variables['unflag_deadline_passed'] = TRUE;
-          $variables['attributes']['class'] = 'unflag-deadline-passed';
+          $variables['attributes']['class'][] = 'unflag-deadline-passed';
           $variables['#attached']['library'][] = 'gin/gin_description_toggle';
         }
       }
@@ -457,27 +498,24 @@ function mapam_volunteer_entity_extra_field_info() {
 
   $extra = [];
 
-  foreach (NodeType::loadMultiple() as $bundle) {
-
-    $extra['node'][$bundle->id()]['display']['title_field'] = [
-      'label'       => t('Title'),
-      'description' => t('Title field'),
-      'weight'      => 100,
-      'visible'     => TRUE,
-    ];
-  }
-
-  $extra['node']['volunteer_slot']['display']['volunteers'] = [
-    'label'       => t('Volunteers'),
+  $extra['node']['timeslot']['display']['volunteers_list'] = [
+    'label'       => t('Volunteers List'),
     'description' => t('Volunteers flag field'),
-    'weight'      => 100,
+    'weight'      => 10,
     'visible'     => TRUE,
   ];
 
-  $extra['taxonomy_term']['vis_group']['display']['title_field'] = [
-    'label'       => t('Title'),
-    'description' => t('Title field'),
-    'weight'      => 100,
+  $extra['node']['timeslot']['display']['volunteers_count'] = [
+    'label'       => t('Volunteers Count'),
+    'description' => t('Volunteers count field'),
+    'weight'      => 10,
+    'visible'     => TRUE,
+  ];
+
+  $extra['node']['timeslot']['display']['slots_occupancy'] = [
+    'label'       => t('Slots Occupancy'),
+    'description' => t('Slots occupancy field (calculated from flag count and flag limit)'),
+    'weight'      => 10,
     'visible'     => TRUE,
   ];
 
@@ -489,23 +527,60 @@ function mapam_volunteer_entity_extra_field_info() {
  */
 function mapam_volunteer_node_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
 
-  // You could get the node ID or anything else
-  // you want from the node object here.
-  $title = $entity->getTitle();
+  if ($display->getComponent('volunteers_list')) {
 
-  if ($display->getComponent('title_field')) {
+    $flag = \Drupal::service('flag')->getFlagById('volunteer');
 
-    $build['title_field'] = [
-      '#type'     => 'inline_template',
-      '#template' => '<h1>{{ title }}</h1>',
-      '#context'  => [
-        'title' => $title,
-      ],
-    ];
+    $flaggings = \Drupal::entityTypeManager()
+      ->getStorage('flagging')
+      ->loadByProperties([
+        'flag_id' => $flag->id(),
+        'entity_type' => 'node',
+        'entity_id' => $entity->id(),
+      ]);
+
+    $user_ids = array_map(fn($f) => $f->getOwnerId(), $flaggings);
+    $users = User::loadMultiple($user_ids);
+
+    $items = [];
+
+    if (empty($users)) {
+      $items[] = [
+        '#markup' => t('No volunteers yet.'),
+        '#attributes' => ['class' => ['list-group-item']],
+      ];
+
+      $build['volunteers_list'] = [
+        '#theme' => 'container',
+        '#attributes' => ['class' => ['volunteers-list', 'no-volunteers']],
+        '#children' => [
+          '#markup' => t('No volunteers yet.'),
+        ],
+      ];
+    }
+    else {
+      foreach ($users as $user) {
+        $items[] = [
+          '#children' => $user->getDisplayName(),
+          '#wrapper_attributes' => ['class' => ['list-group-item', 'p-1', 'm-0']],
+        ];
+      }
+
+      $build['volunteers_list'] = [
+        '#theme' => 'container',
+        '#attributes' => ['class' => ['volunteers-list']],
+        '#children' => [
+          '#theme' => 'item_list',
+          '#attributes' => ['class' => ['list-group', 'm-0']],
+          '#items' => $items,
+        ],
+      ];
+    }
+
   }
 
-  // Get all volunteer flaggings for this node.
-  if ($display->getComponent('volunteers')) {
+  // Get count of volunteer flaggings for this node.
+  if ($display->getComponent('volunteers_count')) {
     $flag = Flag::load('volunteer');
     $flaggings = \Drupal::entityTypeManager()
       ->getStorage('flagging')
@@ -515,16 +590,61 @@ function mapam_volunteer_node_view(array &$build, EntityInterface $entity, Entit
         'entity_id' => $entity->id(),
       ]);
 
-    $build['volunteers'] = [
-      '#theme' => 'item_list',
-      '#title' => t('Volunteers'),
-      '#items' => [],
+    $build['volunteers_count'] = [
+      '#markup' => '---' . count($flaggings),
     ];
+  }
 
-    /** @var \Drupal\flag\FlaggingInterface $flagging */
-    foreach ($flaggings as $flagging) {
-      $user = User::load($flagging->getOwnerId());
-      $build['volunteers']['#items'][] = $user->getDisplayName();
+  // Calculate slots occupancy for this node in percentage.
+  if ($display->getComponent('slots_occupancy')) {
+    $flag = Flag::load('volunteer');
+    $flaggings = \Drupal::entityTypeManager()
+      ->getStorage('flagging')->loadByProperties([
+        'flag_id' => $flag->id(),
+        'entity_type' => 'node',
+        'entity_id' => $entity->id(),
+      ]);
+    $count = count($flaggings);
+    $capacity = $entity->hasField('field_flag_limit') ? $entity->get('field_flag_limit')->value : 0;
+
+    $occupancy = $capacity > 0 ? round(($count / $capacity * 100), 0) : 0;
+    // Ensure occupancy does not exceed 100%.
+    $occupancy = min($occupancy, 100);
+    if ($capacity > 0) {
+      // Build a field with label and prgress bar.
+      $build['#attached']['library'][] = 'mapam_volunteer/bootstrap';
+      $build['slots_occupancy'] = [
+        '#type' => 'container',
+        '#attributes' => ['class' => ['slots-occupancy']],
+        'label' => [
+          '#type' => 'html_tag',
+          '#tag' => 'small',
+          '#value' => t('Occupancy: @occupancy% (@count/@capacity)', [
+            '@occupancy' => $occupancy,
+            '@count' => $count,
+            '@capacity' => $capacity,
+          ]),
+        ],
+        'progress' => [
+          '#type' => 'html_tag',
+          '#tag' => 'div',
+          '#attributes' => [
+            'class' => ['progress'],
+          ],
+          'bar' => [
+            '#type' => 'html_tag',
+            '#tag' => 'div',
+            '#attributes' => [
+              'class' => ['progress-bar', 'bg-info'],
+              'role' => 'progressbar',
+              'style' => 'width: ' . $occupancy . '%;',
+              'aria-valuenow' => $occupancy,
+              'aria-valuemin' => 0,
+              'aria-valuemax' => 100,
+            ],
+          ],
+        ],
+      ];
     }
   }
 }
@@ -649,4 +769,18 @@ function mapam_volunteer_bulk_timeslot_form_submit($form, FormStateInterface $fo
     $created_count++;
   }
   \Drupal::messenger()->addStatus(t('@count timeslots have been created.', ['@count' => $created_count]));
+}
+
+/**
+ * Implements hook_views_pre_render().
+ */
+function mapam_volunteer_views_pre_render(ViewExecutable $view) {
+  if ($view->id() === 'slot_by_pole') {
+    $view->element['#attached']['library'][] = 'mapam_volunteer/bootstrap';
+  }
+  if (
+    $view->id() === 'event_volunteers' ||
+    $view->id() === 'pole_volunteers') {
+    $view->element['#attached']['library'][] = 'mapam_volunteer/bootstrap_icons';
+  }
 }

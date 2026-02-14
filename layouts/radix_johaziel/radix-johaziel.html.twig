@@ -1,0 +1,74 @@
+{#
+/**
+ * @file
+ * Template for Radix Johaziel.
+ *
+ * Variables:
+ * - $css_id: An optional CSS id to use for the layout.
+ * - $content: An array of content, each item in the array is keyed to one
+ * panel of the layout. This layout supports the following sections:
+ */
+#}
+{%
+    set container_classes = [
+    'panel-display',
+    'johaziel',
+    'clearfix'
+]
+%}
+{% if classes %}
+    {% set container_classes = container_classes|merge(classes) %}
+{% endif %}
+{% if class %}
+    {% set container_classes = container_classes|merge(class) %}
+{% endif %}
+
+<div {{ attributes.addClass(container_classes) }}{% if css_id %}{{ css_id }}{% endif %}>
+
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-lg-12 radix-layouts-header panel-panel">
+        <div {{ region_attributes.header.addClass('panel-panel-inner') }}>
+          {{ content.header }}
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-lg-6 radix-layouts-topcolumn1 panel-panel">
+        <div {{ region_attributes.topcolumn1.addClass('panel-panel-inner') }}>
+          {{ content.topcolumn1 }}
+        </div>
+      </div>
+      <div class="col-lg-6 radix-layouts-topcolumn2 panel-panel">
+        <div {{ region_attributes.topcolumn2.addClass('panel-panel-inner') }}>
+          {{ content.topcolumn2 }}
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-lg-3 radix-layouts-contentsidebar panel-panel">
+        <div {{ region_attributes.contentsidebar.addClass('panel-panel-inner') }}>
+          {{ content.contentsidebar }}
+        </div>
+      </div>
+      <div class="col-lg-9 radix-layouts-content panel-panel">
+        <div {{ region_attributes.content.addClass('panel-panel-inner') }}>
+            {{ content.content }}
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-lg-6 radix-layouts-footercolumn1 panel-panel">
+        <div {{ region_attributes.footercolumn1.addClass('panel-panel-inner') }}>
+            {{ content.footercolumn1 }}
+        </div>
+      </div>
+      <div class="col-lg-6 radix-layouts-footercolumn2 panel-panel">
+        <div {{ region_attributes.footercolumn2.addClass('panel-panel-inner') }}>
+            {{ content.footercolumn2 }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.johaziel -->

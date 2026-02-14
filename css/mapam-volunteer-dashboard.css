@@ -1,0 +1,46 @@
+
+.views-view-table table tbody td{
+  padding: var(--gin-spacing-density-xs) var(--gin-spacing-xs);
+}
+
+@media (min-width: 61em) {
+  .gin-layer-wrapper {
+    padding: var(--gin-spacing-s);
+  }
+}
+
+@media (min-width: 61em) {
+  .gin-layer-wrapper {
+    padding: var(--gin-spacing-xs) !important;
+  }
+}
+.gin-layer-wrapper {
+  padding: var(--gin-spacing-xs) !important;
+}
+
+.gin-layer-wrapper + .gin-layer-wrapper {
+  margin-block-start: var(--gin-spacing-s) !important;
+}
+
+.gin-layer-wrapper + h2, .views-edit-view .gin-layer-wrapper + .unit-title, .gin-layer-wrapper + h3 {
+  margin-block-start: var(--gin-spacing-m) !important;
+}
+
+.view-volunteers-index-table h4 {
+  margin: var(--space-xs) 0 var(--space-xs);
+  font-size: var(--gin-font-size-xl);
+  font-weight: var(--gin-font-weight-semibold);
+}
+
+#views-bootstrap-slot-by-pole-block-1 .mccoppin{
+  padding: var(--space-xs) 0;
+  border-bottom: 1px solid var(--gin-border-color);
+}
+.field--name-node-title h5{
+  margin: var(--space-xxs) 0 var(--space-xs);
+}
+/* Add some space in dashbord layout builder*/
+
+.layout__region .views-element-container{
+  padding: var(--gin-spacing-xxs);
+}

@@ -1,11 +1,38 @@
 mapam_volunteer.node.dashboard:
   path: '/node/{node}/dashboard'
   defaults:
-    _controller: '\Drupal\mapam_volunteer\Controller\NodeDashboardController::view'
-    _title_callback: '\Drupal\mapam_volunteer\Controller\NodeDashboardController::title'
+    _controller: '\Drupal\mapam_volunteer\Controller\DashboardController::dashboard'
+    _title_callback: '\Drupal\mapam_volunteer\Controller\DashboardController::nodeTitle'
   requirements:
-    _permission: 'access node dashboard'
-    _entity_access: 'node.view'
+    _custom_access: '\Drupal\mapam_volunteer\Access\DashboardAccessCheck::accessNode'
+    node: \d+
+  options:
+    _admin_route: TRUE
+    parameters:
+      node:
+        type: entity:node
+
+mapam_volunteer.user.dashboard:
+  path: '/user/{user}/dashboard'
+  defaults:
+    _controller: '\Drupal\mapam_volunteer\Controller\DashboardController::userDashboard'
+    _title_callback: '\Drupal\mapam_volunteer\Controller\DashboardController::userTitle'
+  requirements:
+    _custom_access: '\Drupal\mapam_volunteer\Access\DashboardAccessCheck::accessUser'
+    user: \d+
+  options:
+    _admin_route: TRUE
+    parameters:
+      user:
+        type: entity:user
+
+mapam_volunteer.node.view:
+  path: '/node/{node}/view'
+  defaults:
+    _controller: '\Drupal\mapam_volunteer\Controller\DashboardController::view'
+    _title_callback: '\Drupal\mapam_volunteer\Controller\DashboardController::nodeTitle'
+  requirements:
+    _custom_access: '\Drupal\mapam_volunteer\Access\DashboardAccessCheck::accessNode'
     node: \d+
   options:
     parameters:

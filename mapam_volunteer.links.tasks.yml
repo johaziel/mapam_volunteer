@@ -1,5 +1,0 @@
-mapam_volunteer.node.dashboard:
-  route_name: mapam_volunteer.node.dashboard
-  base_route: entity.node.canonical
-  title: 'Dashboard'
-  weight: 10

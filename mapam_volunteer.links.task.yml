@@ -1,0 +1,19 @@
+mapam_volunteer.node.dashboard:
+  route_name: mapam_volunteer.node.dashboard
+  base_route: entity.node.canonical
+  title: 'Dashboard'
+  weight: 5
+  requirements:
+    _custom_access: '\Drupal\mapam_volunteer\Access\DashboardAccessCheck::accessNode'
+
+mapam_volunteer.node.view:
+  route_name: mapam_volunteer.node.view
+  base_route: entity.node.canonical
+  title: 'Voir'
+  weight: 0
+
+mapam_volunteer.user.dashboard:
+  route_name: mapam_volunteer.user.dashboard
+  base_route: entity.user.canonical
+  title: 'Dashboard'
+  weight: 5
