@@ -68,9 +68,11 @@
       </div>
     {% else %}
       {% if flag_full %}
-        <div class="flag-status full">
-          {{ 'No more space available.'|t() }}
-        </div>
+        {% if flag_status %}
+          <div class="flag-status full">
+            {{ 'No more space available.'|t() }}
+          </div>
+        {% endif %}
       {% else %}
         {% if display_flag_link %}
           <a{{ attributes }}>{{ title }}</a>

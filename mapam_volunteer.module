@@ -616,15 +616,6 @@ function mapam_volunteer_node_view(array &$build, EntityInterface $entity, Entit
       $build['slots_occupancy'] = [
         '#type' => 'container',
         '#attributes' => ['class' => ['slots-occupancy']],
-        'label' => [
-          '#type' => 'html_tag',
-          '#tag' => 'small',
-          '#value' => t('Occupancy: @occupancy% (@count/@capacity)', [
-            '@occupancy' => $occupancy,
-            '@count' => $count,
-            '@capacity' => $capacity,
-          ]),
-        ],
         'progress' => [
           '#type' => 'html_tag',
           '#tag' => 'div',
@@ -635,13 +626,18 @@ function mapam_volunteer_node_view(array &$build, EntityInterface $entity, Entit
             '#type' => 'html_tag',
             '#tag' => 'div',
             '#attributes' => [
-              'class' => ['progress-bar', 'bg-info'],
+              'class' => ['progress-bar', 'bg-info', 'text-white'],
               'role' => 'progressbar',
               'style' => 'width: ' . $occupancy . '%;',
               'aria-valuenow' => $occupancy,
               'aria-valuemin' => 0,
               'aria-valuemax' => 100,
             ],
+            '#value' => t('@occupancy% (@count/@capacity)', [
+              '@occupancy' => $occupancy,
+              '@count' => $count,
+              '@capacity' => $capacity,
+            ]),
           ],
         ],
       ];
