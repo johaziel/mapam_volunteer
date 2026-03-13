@@ -98,12 +98,6 @@ class CountFlagsByPole extends NumericField {
         ->condition('entity_id', $timeslot->id())
         ->count()
         ->execute();
-      ddl([
-        'timeslot' => $timeslot->label(),
-        'count' => $count,
-        'pole' => $entity->label(),
-        'value' => $value,
-      ]);
       $value += $count ?? 0;
     }
 

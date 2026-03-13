@@ -1,6 +1,5 @@
+<ul class="list-group list-group-flush m-0">
 {% for row in rows %}
-  {{- row.content -}}
-  {%- if not loop.last -%},&nbsp;
-  {%- else -%}.
-  {%- endif -%}
+  <li class="list-group-item p-1 m-0">{{- row.content -}}</li>
 {% endfor %}
+</ul>

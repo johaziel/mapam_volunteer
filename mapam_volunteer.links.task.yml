@@ -9,7 +9,7 @@ mapam_volunteer.node.dashboard:
 mapam_volunteer.node.view:
   route_name: mapam_volunteer.node.view
   base_route: entity.node.canonical
-  title: 'Voir'
+  title: 'Public view'
   weight: 0
 
 mapam_volunteer.user.dashboard:

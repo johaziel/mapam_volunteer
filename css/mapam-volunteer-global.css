@@ -48,11 +48,11 @@
 .field--name-field-primary-contacts .panel-panel{
   padding: 3px;
 }
-#views-bootstrap-pole-timeslots-block-1 .panel-display{
+#views-bootstrap-pole-timeslots-index-block-1 .panel-display{
   border-bottom:1px solid var(--gin-border-color);
   padding-top:3px;
 }
-#views-bootstrap-pole-timeslots-block-1 .panel-panel{
+#views-bootstrap-pole-timeslots-index-block-1 .layout__region{
   padding:0 2px;
 }
 

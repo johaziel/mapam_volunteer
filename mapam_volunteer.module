@@ -14,12 +14,16 @@ use Drupal\flag\FlagInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\flag\Entity\Flag;
 use Drupal\user\Entity\User;
-use Drupal\node\Entity\NodeType;
 use Drupal\Core\Entity\EntityStorageException;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\node\Entity\Node;
 use Drupal\Component\Serialization\Json;
 use Drupal\views\ViewExecutable;
+
+use Drupal\auto_entitylabel\AutoEntityLabelManager;
+use Drupal\Component\Render\MarkupInterface;
+use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\Core\Render\Markup;
 
 /**
  * Implements hook_page_attachments().
@@ -56,9 +60,17 @@ function mapam_volunteer_theme($existing, $type, $theme, $path) {
     'views_view_unformatted__who_flag_slot' => [
       'base hook' => 'views_view_unformatted',
     ],
-    // Template pour le champ username.
+    'views_view_field__pole_timeslots_index__flag_volunteer_limit_percentage' => [
+      'base hook' => 'views_view_field',
+    ],
+    'views_view_field__pole_timeslots_index__flagging_users_volunteer_list' => [
+      'base hook' => 'views_view_field',
+    ],
     'views_view_field__who_flag_slot__name' => [
       'base hook' => 'views_view_field',
+    ],
+    'views_view_fields__who_flag_slot' => [
+      'base hook' => 'views_view_fields',
     ],
     'entity_print__view__flagging_index' => [
       'template' => 'entity-print--view--flagging-index',
@@ -701,7 +713,7 @@ function mapam_volunteer_get_parent_entity(EntityInterface $entity, $parent_type
 }
 
 /**
- * Implements hook_form_alter().
+ * Implements hook_form_FORM_ID_alter().
  */
 function mapam_volunteer_form_node_timeslot_recur_form_alter(array &$form, FormStateInterface $form_state, $form_id) {
   // Remove the default "Add another item" button.
@@ -771,12 +783,74 @@ function mapam_volunteer_bulk_timeslot_form_submit($form, FormStateInterface $fo
  * Implements hook_views_pre_render().
  */
 function mapam_volunteer_views_pre_render(ViewExecutable $view) {
-  if ($view->id() === 'slot_by_pole') {
-    $view->element['#attached']['library'][] = 'mapam_volunteer/bootstrap';
+  switch ($view->id()) {
+    case 'pole_timeslots_index':
+      $view->element['#attached']['library'][] = 'mapam_volunteer/bootstrap';
+      break;
+
+    case 'event_volunteers':
+    case 'pole_volunteers':
+      $view->element['#attached']['library'][] = 'mapam_volunteer/bootstrap_icons';
+      break;
   }
-  if (
-    $view->id() === 'event_volunteers' ||
-    $view->id() === 'pole_volunteers') {
-    $view->element['#attached']['library'][] = 'mapam_volunteer/bootstrap_icons';
+}
+
+/**
+ * Implements hook_entity_insert().
+ */
+function mapam_volunteer_entity_insert(EntityInterface $entity) {
+  // AutoEntityLabel only supports content entities.
+  if ($entity instanceof ContentEntityInterface) {
+    if (!in_array($entity->bundle(), ['timeslot', 'session'])) {
+      return;
+    }
+    // To support tokens that are only available after the entity has
+    // been created (like id tokens) trigger a second save.
+    // To do this without corrupting the entity run the
+    // save operation at the end of the entity insert transaction.
+    // To run code at the entity of the entity insert transaction
+    // we need to register a transaction shutdown function.
+    // Check the autolabel settings for the entity to see if we
+    // need to register the shutdown function.
+    $decorator = \Drupal::service('auto_entitylabel.entity_decorator');
+    /** @var \Drupal\auto_entitylabel\AutoEntityLabelManager $decorated_entity */
+    $decorated_entity = $decorator->decorate($entity);
+    if ($decorated_entity->hasLabel()
+      && $decorated_entity->getNewContentBehavior() === AutoEntityLabelManager::AFTER_SAVE
+    ) {
+      // Set entity label in memory so messages and such can use what will be
+      // saved during shutdown.
+      $decorator = \Drupal::service('auto_entitylabel.entity_decorator');
+      /** @var \Drupal\auto_entitylabel\AutoEntityLabelManager $decorated_entity */
+      $decorated_entity = $decorator->decorate($entity);
+      if ($decorated_entity->hasLabel()) {
+        $placeholder = strtr('%AutoEntityLabel: @entityId%', ['@entityId' => $entity->uuid()]);
+        if ($entity->label() == $placeholder) {
+          if ($decorated_entity->getNewContentBehavior() === AutoEntityLabelManager::AFTER_SAVE) {
+            // Update entity's label in memory for anything running after us.
+            $label = $decorated_entity->setLabel();
+            $entity->setTitle($label);
+            $entity->save();
+            // Update messages that were using the placeholder label.
+            $messenger = Drupal::messenger();
+            $all_messages = $messenger->all();
+            $messenger->deleteAll();
+            foreach ($all_messages as $type => $messages) {
+              foreach ($messages as $message) {
+                if (strpos($message, $placeholder) >= 0) {
+                  if ($message instanceof MarkupInterface) {
+                    $message = Markup::create(str_replace($placeholder, $label, $message));
+                  }
+                  else {
+                    $message = str_replace($placeholder, $label, $message);
+                  }
+                }
+                $messenger->addMessage($message, $type);
+              }
+            }
+          }
+        }
+      }
+    }
   }
 }
