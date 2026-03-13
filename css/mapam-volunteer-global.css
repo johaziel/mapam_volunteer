@@ -56,6 +56,18 @@
   padding:0 2px;
 }
 
+.view-id-pole_timeline_index {
+  display:flex;
+  flex-wrap:row;
+  gap: var(--space-xs);
+}
+.view-id-pole_timeline_index .view-filters{
+  flex:1;
+}
+.view-id-pole_timeline_index .view-content{
+  flex:5;
+}
+
 /* Add some space in dashbord layout builder*/
 
 .layout__region .views-element-container{
