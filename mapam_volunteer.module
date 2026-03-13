@@ -464,6 +464,15 @@ function mapam_volunteer_views_data_alter(array &$data) {
       'id' => 'calculate_volunteer_ratio',
     ],
   ];
+
+  // Add Calculate Timeslot Ratio field.
+  $data['node_field_data']['calculate_timeslot_ratio'] = [
+    'field' => [
+      'title' => t('Calculate timeslot ratio'),
+      'help' => t('Display the timeslot ratio for all timeslots.'),
+      'id' => 'calculate_timeslot_ratio',
+    ],
+  ];
 }
 
 /**
@@ -851,6 +860,21 @@ function mapam_volunteer_entity_insert(EntityInterface $entity) {
           }
         }
       }
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_view_mode_alter().
+ */
+function mapam_volunteer_entity_view_mode_alter(&$view_mode, $entity, $context) {
+  $current_user = \Drupal::currentUser();
+  if ($view_mode == 'full' && $current_user && $entity->getEntityTypeId() === 'node' && $entity->bundle() === 'pole') {
+    if ($current_user->isAnonymous()) {
+      $view_mode = 'anonymous';
+    }
+    else {
+      $view_mode = 'authenticated';
     }
   }
 }

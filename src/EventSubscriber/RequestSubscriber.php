@@ -91,8 +91,6 @@ class RequestSubscriber implements EventSubscriberInterface {
         else {
           $response->addCommand(new MessageCommand($this->t("You are registred !")));
         }
-
-
       }
     }
   }
