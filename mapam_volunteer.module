@@ -25,6 +25,11 @@ use Drupal\Component\Render\MarkupInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Render\Markup;
 
+use Drupal\Core\Breadcrumb\Breadcrumb;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Link;
+use Drupal\Core\Menu\MenuLinkInterface;
+
 /**
  * Implements hook_page_attachments().
  */
@@ -877,4 +882,17 @@ function mapam_volunteer_entity_view_mode_alter(&$view_mode, $entity, $context) 
       $view_mode = 'authenticated';
     }
   }
+}
+
+/**
+ * Implements hook_system_breadcrumb_alter().
+ */
+function mapam_volunteer_system_breadcrumb_alter(Breadcrumb &$breadcrumb, RouteMatchInterface $route_match, array $context) {
+  // Add an item to the end of the breadcrumb.
+
+  if ($route_match->getRouteName() == 'mapam_volunteer.node.dashboard') {
+    // $breadcrumb->addLink(Link::createFromRoute(t('Dashboard'), 'mapam_volunteer.node.dashboard',
+    //  ['node' => $route_match->getParameter('node')->id()]));
+  }
+  // ddl($breadcrumb);
 }

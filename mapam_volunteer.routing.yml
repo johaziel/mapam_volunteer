@@ -1,7 +1,7 @@
 mapam_volunteer.node.dashboard:
   path: '/node/{node}/dashboard'
   defaults:
-    _controller: '\Drupal\mapam_volunteer\Controller\DashboardController::dashboard'
+    _controller: '\Drupal\mapam_volunteer\Controller\DashboardController::nodeDashboard'
     _title_callback: '\Drupal\mapam_volunteer\Controller\DashboardController::nodeTitle'
   requirements:
     _custom_access: '\Drupal\mapam_volunteer\Access\DashboardAccessCheck::accessNode'
@@ -29,7 +29,7 @@ mapam_volunteer.user.dashboard:
 mapam_volunteer.node.view:
   path: '/node/{node}/view'
   defaults:
-    _controller: '\Drupal\mapam_volunteer\Controller\DashboardController::view'
+    _controller: '\Drupal\mapam_volunteer\Controller\DashboardController::nodeView'
     _title_callback: '\Drupal\mapam_volunteer\Controller\DashboardController::nodeTitle'
   requirements:
     _custom_access: '\Drupal\mapam_volunteer\Access\DashboardAccessCheck::accessNode'

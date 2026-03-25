@@ -48,7 +48,7 @@ class DashboardController extends ControllerBase {
    * @return array
    *   A render array.
    */
-  public function dashboard(NodeInterface $node) {
+  public function nodeDashboard(NodeInterface $node) {
     $view_builder = $this->entityTypeManager->getViewBuilder('node');
 
     // Build the node using the 'dashboard' view mode.
@@ -84,7 +84,7 @@ class DashboardController extends ControllerBase {
    * @return array
    *   A render array.
    */
-  public function view(NodeInterface $node) {
+  public function nodeView(NodeInterface $node) {
     $view_builder = $this->entityTypeManager->getViewBuilder('node');
 
     // Build the node using the 'dashboard' view mode.

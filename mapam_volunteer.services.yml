@@ -18,17 +18,17 @@ services:
   mapam_volunteer.local_task_pole_access:
     class: '\Drupal\mapam_volunteer\Plugin\views\access\LocalTaskPoleAccess'
     parent: default_plugin_manager
-  mapam_volunteer.print_css_alter_subscriber:
-    class: Drupal\mapam_volunteer\EventSubscriber\EntityPrintSubscriber
-    tags:
-    - { name: event_subscriber }
-  mapam_volunteer.node_dashboard_redirect_subscriber:
-    class: Drupal\mapam_volunteer\EventSubscriber\NodeDashboardRedirectSubscriber
-    arguments: ['@current_user','@current_route_match','@request_stack']
-    tags:
-      - { name: event_subscriber }
-  mapam_volunteer.user_dashboard_redirect_subscriber:
-    class: Drupal\mapam_volunteer\EventSubscriber\UserDashboardRedirectSubscriber
-    arguments: ['@current_user','@current_route_match','@request_stack']
-    tags:
-      - { name: event_subscriber }
+#  mapam_volunteer.print_css_alter_subscriber:
+#    class: Drupal\mapam_volunteer\EventSubscriber\EntityPrintSubscriber
+#    tags:
+#    - { name: event_subscriber }
+  #mapam_volunteer.node_dashboard_redirect_subscriber:
+  #  class: Drupal\mapam_volunteer\EventSubscriber\NodeDashboardRedirectSubscriber
+  #  arguments: ['@current_user','@current_route_match','@request_stack']
+  #  tags:
+  #    - { name: event_subscriber }
+  #mapam_volunteer.user_dashboard_redirect_subscriber:
+  #  class: Drupal\mapam_volunteer\EventSubscriber\UserDashboardRedirectSubscriber
+  #  arguments: ['@current_user','@current_route_match','@request_stack']
+  #  tags:
+  #x    - { name: event_subscriber }

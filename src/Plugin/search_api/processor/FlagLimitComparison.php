@@ -179,12 +179,12 @@ class FlagLimitComparison extends FlagIndexer {
     $config = $this->configuration['flag_index'];
     try {
       $entity = $item->getOriginalObject()->getValue();
-      // Get the limit from the entity field.
-      $limit = (int) $entity->get('field_flag_limit')->value;
 
       if (!$entity->hasField('field_flag_limit')) {
         return;
       }
+      // Get the limit from the entity field.
+      $limit = (int) $entity->get('field_flag_limit')->value;
 
       foreach ($config as $flag_id) {
         // Get the current flag count.
