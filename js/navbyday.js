@@ -3,58 +3,68 @@
  * ADD to Vis timeline nav by day functionnality.
  */
 
-(function ($, Drupal, drupalSettings,once) {
+(function ($, Drupal, luxon, once) {
+  const { DateTime } = luxon;
 
   Drupal.behaviors.navByDay = {
     attach: function (context, settings) {
-      // DOM element where the Timeline will be attached
-      var allcontainers = document.getElementsByClassName ('vis-timeline');
 
-      var container = null;
-      // loop trought children if there timeline is initialized
-      for (let i = 0; i < allcontainers.length; i++) {
-        const container = allcontainers[i];
-        if (container.timeline) {
+      // once() garantit que ce code ne s'exécute qu'une seule fois par élément
+      once('navByDay', '.vis-timeline', context).forEach(function (container) {
 
-          // Dynamically create nav buttons for each day if the range is 15 days or less
-          var range = container.timeline.initialRange
-          var totalDays = Math.floor((range.end - range.start) / (24 * 60 * 60 * 1000)) + 1;
+        if (!container.timeline) return;
 
-          if (totalDays <= 15) {
-            // Add the container before vis-timeline-programmation_index-page_1 if not already present for the nav buttons
-            var navDaysContainer = document.getElementById("navDaysContainer");
-            if (!navDaysContainer) {
-              navDaysContainer = document.createElement("div");
-              navDaysContainer.id = "navDaysContainer";
-              // Insert the navDaysContainer before the vis-timeline element
-              container.parentNode.insertBefore(navDaysContainer, container);
-            }
+        var range = container.timeline.getWindow();
+        var visibleItems = container.timeline.itemsData.get();
 
-            navDaysContainer.innerHTML = ""; // Clear existing buttons
-            for (let i = 0; i < totalDays; i++) {
-              let button = document.createElement("button");
-              button.id = "navDay" + (i + 1);
-              button.innerText = moment(range.start).startOf('day').add(i, 'days').format('ddd D');
-              //button.innerText = "Zoom Day " + (i + 1);
-              button.onclick = function () {
-                navByDay(container.timeline, i);
-              };
-              navDaysContainer.appendChild(button);
-            }
+        if (visibleItems.length > 0) {
+          range.start = visibleItems[0].start;
+          range.end = visibleItems[visibleItems.length - 1].end;
+        }
+
+        var totalDays = Math.round((range.end - range.start) / (24 * 60 * 60 * 1000)) + 1;
+
+        if (totalDays <= 15) {
+          var navDaysContainer = document.getElementById("navDaysContainer");
+
+          if (!navDaysContainer) {
+            navDaysContainer = document.createElement("div");
+            navDaysContainer.id = "navDaysContainer";
+            container.parentNode.insertBefore(navDaysContainer, container);
+          }
+
+          navDaysContainer.innerHTML = "";
+
+          for (let i = 0; i < totalDays; i++) {
+            let button = document.createElement("button");
+            button.id = "navDay" + (i + 1);
+
+            let dayDate = i === 0
+              ? DateTime.fromJSDate(range.start)
+              : DateTime.fromJSDate(range.start).startOf('day').plus({ days: i });
+
+            button.innerText = dayDate.toLocaleString(DateTime.DATE_MED);
+            button.onclick = function () {
+              navByDay(container.timeline, dayDate);
+            };
+
+            navDaysContainer.appendChild(button);
           }
         }
-      }
+      });
     }
   };
 
-  function navByDay(timeline, dayIndex) {
-    var initialRange = timeline.initialRange || timeline.getWindow();
-    var startOfDay = moment(initialRange.start).startOf('day').add(dayIndex, 'days').add(7, 'hours').toDate();
-    var endOfDay = moment(startOfDay).add(19, 'hours').toDate();
+  function navByDay(timeline, dayDate) {
+    console.log("Navigating to day:", dayDate);
+    // use luxon to calculate the start at 7 the morninand end oat 24 of the day
+    var startOfDay = dayDate.set({ hour: 7, minute: 0, second: 0, millisecond: 0 }).toJSDate();
+    var endOfDay = dayDate.set({ hour: 23, minute: 59, second: 59, millisecond: 999 }).toJSDate();
     timeline.setWindow({
       start: startOfDay,
       end: endOfDay,
     });
+        console.log("Timeline window set to:", startOfDay, endOfDay);
   }
 
-}(jQuery, Drupal, drupalSettings,once)); 
+}(jQuery, Drupal, luxon, once)); 
