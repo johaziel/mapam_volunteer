@@ -56,15 +56,12 @@
   };
 
   function navByDay(timeline, dayDate) {
-    console.log("Navigating to day:", dayDate);
-    // use luxon to calculate the start at 7 the morninand end oat 24 of the day
     var startOfDay = dayDate.set({ hour: 7, minute: 0, second: 0, millisecond: 0 }).toJSDate();
     var endOfDay = dayDate.set({ hour: 23, minute: 59, second: 59, millisecond: 999 }).toJSDate();
     timeline.setWindow({
       start: startOfDay,
       end: endOfDay,
     });
-        console.log("Timeline window set to:", startOfDay, endOfDay);
   }
 
 }(jQuery, Drupal, luxon, once)); 
