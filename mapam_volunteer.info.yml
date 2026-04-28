@@ -19,7 +19,6 @@ dependencies:
   - viewfield:viewfield
   - views_field_view:views_field_view
   - views_vis_timeline:views_vis_timeline
-  - exclude_node_title:exclude_node_title
   - color_field:color_field
   - token:token
   - field_layout:field_layout

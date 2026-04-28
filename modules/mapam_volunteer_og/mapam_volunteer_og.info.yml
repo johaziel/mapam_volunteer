@@ -1,0 +1,12 @@
+name: 'Mapam Volunteer OG'
+type: module
+description: 'Provide plugin and event subscriber for OG integration in Mapam Volunteer.'
+core_version_requirement: ^10
+package: Mapam
+version: 1.0.0
+dependencies:
+  - flag_fse:flag_fse
+  - og:og
+  - message_notify:message_notify
+  - message_digest:message_digest
+  - hook_event_dispatcher:core_event_dispatcher

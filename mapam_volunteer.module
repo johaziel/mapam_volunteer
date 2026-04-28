@@ -35,6 +35,7 @@ use Drupal\Core\Menu\MenuLinkInterface;
  */
 function mapam_volunteer_page_attachments(array &$attachments) {
   $attachments['#attached']['library'][] = 'mapam_volunteer/global-styling';
+  $attachments['#attached']['library'][] = 'mapam_volunteer/navbyday';
 }
 
 /**
@@ -112,7 +113,7 @@ function mapam_volunteer_theme($existing, $type, $theme, $path) {
  */
 function mapam_volunteer_preprocess_entity_print__view__flagging_index(array &$variables) {
   $view = $variables['content'][0]['#view'];
-  $event_id = $view->argument['field_event']->getValue();
+  $event_id = reset($view->args);
   $event = \Drupal::entityTypeManager()->getStorage('node')->load($event_id);
   $variables['view_title'] = t('Planning for @label', ['@label' => $event->label()]);
 }
@@ -122,7 +123,7 @@ function mapam_volunteer_preprocess_entity_print__view__flagging_index(array &$v
  */
 function mapam_volunteer_preprocess_entity_print__view__pole_planning(array &$variables) {
   $view = $variables['content'][0]['#view'];
-  $pole_id = $view->argument['field_pole']->getValue();
+  $pole_id = reset($view->args);
   $pole = \Drupal::entityTypeManager()->getStorage('node')->load($pole_id);
   $variables['view_title'] = t('Planning for @label', ['@label' => $pole->label()]);
 }
@@ -132,7 +133,7 @@ function mapam_volunteer_preprocess_entity_print__view__pole_planning(array &$va
  */
 function mapam_volunteer_preprocess_entity_print__view__flagging_index_per_pole(array &$variables) {
   $view = $variables['content'][0]['#view'];
-  $pole_id = $view->argument['field_pole']->getValue();
+  $pole_id = reset($view->args);
   $pole = \Drupal::entityTypeManager()->getStorage('node')->load($pole_id);
   $variables['view_title'] = t('Planning for @label', ['@label' => $pole->label()]);
 }
@@ -327,8 +328,11 @@ function template_preprocess_flag_fse_fallback_link(&$variables) {
       return;
     }
     $volunteer_slot = $entity;
-    $parent_entity = mapam_volunteer_get_parent_entity($volunteer_slot, 'node', 'event');
 
+    // Call the ParentEventTarget plugins to find the parent event of this volunteer slot.
+    // @todo :remove mapam_volunteer_get_parent_entity.
+    $parent_target_manager = \Drupal::service('plugin.manager.parent_event_target')->getApplicableTarget($volunteer_slot);
+    $parent_entity = $parent_target_manager->getParentEventTarget($volunteer_slot);
     if ($parent_entity) {
       // Check if the flag deadline has passed.
       if ($action == 'flag' && $parent_entity->hasField('field_date_limit_flag') && !$parent_entity->get('field_date_limit_flag')->isEmpty()) {
@@ -493,7 +497,10 @@ function mapam_volunteer_flag_action_access($action, FlagInterface $flag, Accoun
     }
 
     $volunteer_slot = $flaggable;
-    $parent_entity = mapam_volunteer_get_parent_entity($volunteer_slot, 'node', 'event');
+
+    // Call the ParentEventTarget plugins to find the parent event of this volunteer slot.
+    $parent_target_manager = \Drupal::service('plugin.manager.parent_event_target')->getApplicableTarget($volunteer_slot);
+    $parent_entity = $parent_target_manager->getParentEventTarget($volunteer_slot);
 
     // Check if the host entity has the unflag deadline field.
     if ($parent_entity->hasField('field_date_limit_unflag') && !$parent_entity->get('field_date_limit_unflag')->isEmpty()) {
@@ -744,8 +751,11 @@ function mapam_volunteer_form_node_timeslot_recur_form_alter(array &$form, FormS
   ];
 
   // Define allowed fields to move in the common fieldset.
-  $allowed_fields = ['field_pole', 'field_flag_limit', 'field_event'];
+  $allowed_fields = ['field_pole', 'field_flag_limit', 'field_event', 'og_audience'];
   foreach ($allowed_fields as $field_name) {
+    if (!isset($form[$field_name])) {
+      continue;
+    }
     $form['common_fields'][$field_name] = $form[$field_name];
     $form['common_fields'][$field_name]['#group'] = 'common_fields';
     unset($form[$field_name]);
@@ -780,10 +790,18 @@ function mapam_volunteer_bulk_timeslot_form_submit($form, FormStateInterface $fo
         'value' => $start,
         'end_value' => $end,
       ],
-      'field_event' => $entity->get('field_event')->target_id,
-      'field_pole' => $entity->get('field_pole')->target_id,
       'field_flag_limit' => $entity->get('field_flag_limit')->value,
     ];
+
+    if ($entity->hasField('field_event') && !$entity->get('field_event')->isEmpty()) {
+      $timeslot_data['field_event'] = $entity->get('field_event')->value;
+    }
+    if ($entity->hasField('field_pole') && !$entity->get('field_pole')->isEmpty()) {
+      $timeslot_data['field_pole'] = $entity->get('field_pole')->value;
+    }
+    if ($entity->hasField('og_audience') && !$entity->get('og_audience')->isEmpty()) {
+      $timeslot_data['og_audience'] = $entity->get('og_audience')->value;
+    }
 
     $timeslot = Node::create($timeslot_data);
     $timeslot->save();
@@ -892,7 +910,7 @@ function mapam_volunteer_system_breadcrumb_alter(Breadcrumb &$breadcrumb, RouteM
 
   if ($route_match->getRouteName() == 'mapam_volunteer.node.dashboard') {
     // $breadcrumb->addLink(Link::createFromRoute(t('Dashboard'), 'mapam_volunteer.node.dashboard',
-    //  ['node' => $route_match->getParameter('node')->id()]));
+    // ['node' => $route_match->getParameter('node')->id()]));
   }
   // ddl($breadcrumb);
 }

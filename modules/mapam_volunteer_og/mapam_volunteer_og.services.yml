@@ -1,0 +1,11 @@
+services:
+  mapam_volunteer_og.flag_subscriber:
+    class: Drupal\mapam_volunteer_og\EventSubscriber\FlagMessageSubscriber
+    arguments: ['@current_user', '@entity_type.manager', '@flag', '@og.membership_manager', '@message_notify.sender', '@database']
+    tags:
+      - { name: event_subscriber }
+  mapam_volunteer_og.timeslot_subscriber:
+    class: Drupal\mapam_volunteer_og\EventSubscriber\TimeslotSubscriber
+    arguments: ['@current_user', '@entity_type.manager', '@flag', '@og.membership_manager', '@message_notify.sender', '@database']
+    tags:
+      - { name: event_subscriber }

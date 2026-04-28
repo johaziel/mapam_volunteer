@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\volunteer_fse\Plugin\FlagFseSource;
+namespace Drupal\mapam_volunteer_og\Plugin\FlagFseSource;
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
@@ -17,7 +17,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   priority = 10
  * )
  */
-class OrganicGroupsFlagFseSource extends FlagFseSourceBase implements ContainerFactoryPluginInterface {
+class OgFlagFseSource extends FlagFseSourceBase implements ContainerFactoryPluginInterface {
 
   /**
    * The OG group type manager.
@@ -32,6 +32,13 @@ class OrganicGroupsFlagFseSource extends FlagFseSourceBase implements ContainerF
    * @var \Drupal\og\MembershipManagerInterface|null
    */
   protected $membershipManager;
+
+  /**
+   * The parent group entity.
+   *
+   * @var \Drupal\Core\Entity\EntityInterface|null
+   */
+  protected $parentGroup = NULL;
 
   /**
    * {@inheritdoc}
@@ -53,7 +60,9 @@ class OrganicGroupsFlagFseSource extends FlagFseSourceBase implements ContainerF
    * {@inheritdoc}
    */
   public function applies(EntityInterface $entity) {
-    if (!$this->groupTypeManager || !$this->membershipManager) {
+    $this->groupTypeManager = \Drupal::service('og.group_type_manager');
+
+    if ($entity->bundle() !== 'timeslot') {
       return FALSE;
     }
 
@@ -67,32 +76,37 @@ class OrganicGroupsFlagFseSource extends FlagFseSourceBase implements ContainerF
    */
   public function getAvailableUsers(EntityInterface $entity) {
     $user_ids = [];
-    $group = NULL;
 
-    // Check if entity is a group.
-    if ($this->groupTypeManager->isGroup($entity->getEntityTypeId(), $entity->bundle())) {
-      $group = $entity;
-    }
-    // Check if entity is group content.
-    elseif ($this->groupTypeManager->isGroupContent($entity->getEntityTypeId(), $entity->bundle())) {
-      $groups = $this->membershipManager->getGroups($entity);
-      if (!empty($groups)) {
-        foreach ($groups as $entities) {
-          $group = reset($entities);
-          break;
-        }
-      }
-    }
+    // Recusively find the parent group if the entity is group content.
+    $this->findGrandParentGroup($entity);
 
     // Get group members.
-    if ($group) {
-      $memberships = $this->membershipManager->getGroupMembershipsByRoleNames($group, ['member']);
+    if ($this->parentGroup) {
+      $memberships = $this->membershipManager->getGroupMembershipsByRoleNames($this->parentGroup, ['member']);
       foreach ($memberships as $membership) {
         $user_ids[] = $membership->getOwnerId();
       }
     }
 
     return $user_ids;
+  }
+
+  /**
+   * Recursively finds the parent group of the given entity.
+   */
+  protected function findGrandParentGroup(EntityInterface $entity) {
+    $groups = $this->membershipManager->getGroups($entity);
+    // The groups are returned as a two-dimensional array. Flatten it.
+    $groups = array_reduce($groups, 'array_merge', []);
+    // Get the first group (if any).
+    $group = reset($groups);
+
+    if ($group && $group->bundle() === 'event') {
+      $this->parentGroup = $group;
+      return;
+    }
+    $this->findGrandParentGroup($group);
+
   }
 
 }
