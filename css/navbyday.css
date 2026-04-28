@@ -1,0 +1,7 @@
+#navDaysContainer {
+  padding:var(--gin-spacing-xs);;
+}
+
+#navDaysContainer button{
+  margin:0 5px;
+}

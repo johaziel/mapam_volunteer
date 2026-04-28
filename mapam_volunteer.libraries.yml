@@ -32,6 +32,9 @@ navbyday:
   version: VERSION
   js:
     js/navbyday.js: {}
+  css:
+    theme:
+      css/navbyday.css: {}
   dependencies:
     - core/drupal
     - core/once

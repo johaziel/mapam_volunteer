@@ -7,35 +7,46 @@
 
   Drupal.behaviors.navByDay = {
     attach: function (context, settings) {
-
       // DOM element where the Timeline will be attached
-      var container = document.getElementById('vis-timeline-programmation_index-page_1');
-      console.log('navByDay behavior attached', container);
-      if (container.timeline) {
+      var allcontainers = document.getElementsByClassName ('vis-timeline');
 
-        // Dynamically create nav buttons for each day if the range is 15 days or less
-        var range = container.timeline.initialRange
-        var totalDays = Math.floor((range.end - range.start) / (24 * 60 * 60 * 1000)) + 1;
+      var container = null;
+      // loop trought children if there timeline is initialized
+      for (let i = 0; i < allcontainers.length; i++) {
+        const container = allcontainers[i];
+        if (container.timeline) {
 
-        if (totalDays <= 15) {
-          var zoomContainer = document.getElementById("navDaysContainer");
-          if (zoomContainer) {
-            zoomContainer.innerHTML = ""; // Clear existing buttons
+          // Dynamically create nav buttons for each day if the range is 15 days or less
+          var range = container.timeline.initialRange
+          var totalDays = Math.floor((range.end - range.start) / (24 * 60 * 60 * 1000)) + 1;
+
+          if (totalDays <= 15) {
+            // Add the container before vis-timeline-programmation_index-page_1 if not already present for the nav buttons
+            var navDaysContainer = document.getElementById("navDaysContainer");
+            if (!navDaysContainer) {
+              navDaysContainer = document.createElement("div");
+              navDaysContainer.id = "navDaysContainer";
+              // Insert the navDaysContainer before the parent with class="vis-timeline-container"
+              var parentContainer = container.closest('.vis-timeline-container');
+              parentContainer.insertBefore(navDaysContainer, parentContainer.firstChild);
+            }
+            console.log(container.parentNode);
+            navDaysContainer.innerHTML = ""; // Clear existing buttons
             for (let i = 0; i < totalDays; i++) {
               let button = document.createElement("button");
-              button.id = "zoomDay" + (i + 1);
+              button.id = "navDay" + (i + 1);
               button.innerText = moment(range.start).startOf('day').add(i, 'days').format('ddd D');
               //button.innerText = "Zoom Day " + (i + 1);
               button.onclick = function () {
                 navByDay(container.timeline, i);
               };
-              zoomContainer.appendChild(button);
+              navDaysContainer.appendChild(button);
             }
           }
         }
       }
     }
-  }
+  };
 
   function navByDay(timeline, dayIndex) {
     var initialRange = timeline.initialRange || timeline.getWindow();
@@ -45,6 +56,6 @@
       start: startOfDay,
       end: endOfDay,
     });
-    }
+  }
 
-})(jQuery, Drupal, drupalSettings,once);
+}(jQuery, Drupal, drupalSettings,once)); 
