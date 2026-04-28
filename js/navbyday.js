@@ -26,11 +26,10 @@
             if (!navDaysContainer) {
               navDaysContainer = document.createElement("div");
               navDaysContainer.id = "navDaysContainer";
-              // Insert the navDaysContainer before the parent with class="vis-timeline-container"
-              var parentContainer = container.closest('.vis-timeline-container');
-              parentContainer.insertBefore(navDaysContainer, parentContainer.firstChild);
+              // Insert the navDaysContainer before the vis-timeline element
+              container.parentNode.insertBefore(navDaysContainer, container);
             }
-            console.log(container.parentNode);
+
             navDaysContainer.innerHTML = ""; // Clear existing buttons
             for (let i = 0; i < totalDays; i++) {
               let button = document.createElement("button");
