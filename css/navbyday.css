@@ -3,5 +3,7 @@
 }
 
 #navDaysContainer button{
-  margin:0 5px;
+  margin:3px 5px;
+  border: 1px solid var(--gin-border-color-form-element);
+  border-radius: 4px; 
 }
