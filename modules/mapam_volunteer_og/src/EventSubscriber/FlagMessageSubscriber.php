@@ -117,7 +117,7 @@ class FlagMessageSubscriber implements EventSubscriberInterface {
     if ($flagging->getFlagId() !== 'volunteer') {
       return;
     }
-    ddl($flagging);
+
     $this->sendNotificationsFromFlagging($flagging, 'flag');
 
   }
@@ -130,7 +130,7 @@ class FlagMessageSubscriber implements EventSubscriberInterface {
    */
   public function onUnflag(UnflaggingEvent $event) {
     $flaggings = $event->getFlaggings();
-    ddl($flaggings);
+
     foreach ($flaggings as $flagging) {
       // Manage only volunteer flag.
       if ($flagging->getFlagId() !== 'volunteer') {
@@ -183,7 +183,7 @@ class FlagMessageSubscriber implements EventSubscriberInterface {
     }
 
     // Get unique groups administrators and referents to notify.
-    $unique_members = []; 
+    $unique_members = [];
     foreach ($og_groups as $groups) {
       foreach ($groups as $group) {
 
@@ -205,8 +205,6 @@ class FlagMessageSubscriber implements EventSubscriberInterface {
     }
 
     foreach ($unique_members as $member) {
-      //$member = $unique_member->getOwner();
-
       // Avoid sending notification to the user who performed the action.
       if ($member->id() === $flagging->getOwnerId()) {
         continue;

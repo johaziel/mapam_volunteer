@@ -901,16 +901,3 @@ function mapam_volunteer_entity_view_mode_alter(&$view_mode, $entity, $context) 
     }
   }
 }
-
-/**
- * Implements hook_system_breadcrumb_alter().
- */
-function mapam_volunteer_system_breadcrumb_alter(Breadcrumb &$breadcrumb, RouteMatchInterface $route_match, array $context) {
-  // Add an item to the end of the breadcrumb.
-
-  if ($route_match->getRouteName() == 'mapam_volunteer.node.dashboard') {
-    // $breadcrumb->addLink(Link::createFromRoute(t('Dashboard'), 'mapam_volunteer.node.dashboard',
-    // ['node' => $route_match->getParameter('node')->id()]));
-  }
-  // ddl($breadcrumb);
-}

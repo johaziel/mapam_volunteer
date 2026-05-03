@@ -4,3 +4,152 @@
  * @file
  * Contains mapam_volunteer_og.module.
  */
+
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\node\Entity\Node;
+use Drupal\og\Entity\OgMembership;
+use Drupal\og\Og;
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_theme_registry_alter().
+ *
+ * This function prevents the Gin theme from processing breadcrumbs by removing
+ * its preprocess callback from the theme registry. As a result, the theme will
+ * no longer invoke gin_preprocess_breadcrumb().
+ */
+function mapam_volunteer_og_theme_registry_alter(&$theme_registry) {
+  // Check if the 'breadcrumb' hook has any registered preprocess functions.
+  if (isset($theme_registry['breadcrumb']['preprocess functions'])) {
+    foreach ($theme_registry['breadcrumb']['preprocess functions'] as $key => $function) {
+      // Identify the 'gin_preprocess_breadcrumb' function.
+      if ($function === 'gin_preprocess_breadcrumb') {
+        // Remove it so it won't be executed for breadcrumb rendering.
+        unset($theme_registry['breadcrumb']['preprocess functions'][$key]);
+      }
+    }
+  }
+  $theme_registry['breadcrumb']['preprocess functions'][] = 'mapam_volunteer_og_custom_preprocess_breadcrumb';
+}
+
+/**
+ * Implements fake hook_preprocess_breadcrumb().
+ */
+function mapam_volunteer_og_custom_preprocess_breadcrumb(&$variables) {
+  // Get the route name of the current page.
+  $route_name = \Drupal::routeMatch()->getRouteName();
+
+  if ($route_name == 'mapam_volunteer.node.dashboard'
+    || $route_name == 'entity.node.edit_form'
+    || $route_name == 'entity.node.view') {
+
+    $node_id = \Drupal::routeMatch()->getRawParameter('node');
+    $node = \Drupal::entityTypeManager()->getStorage('node')->load($node_id);
+
+    if ($node instanceof Node && in_array($node->bundle(), ['pole', 'timeslot'])) {
+      $variables['breadcrumb'] = [$variables['breadcrumb'][0]];
+      // Call a recursive function to get the parent nodes of the current node.
+      $parent_nodes = mapam_volunteer_og_get_parent_nodes($node);
+      // Reverse the order of the parent nodes to have the top-level parent first.
+      $parent_nodes = array_reverse($parent_nodes);
+
+      // Add the parent nodes to the breadcrumb.
+      foreach ($parent_nodes as $parent_node) {
+        $variables['breadcrumb'][] = $parent_node;
+      }
+
+      // Finally, add the current node to the breadcrumb.
+      $variables['breadcrumb'][] = [
+        'text' => $node->label(),
+        'url' => $node->toUrl(),
+      ];
+    }
+  }
+}
+
+/**
+ * Recursive function to get the parent nodes of a given node.
+ *
+ * @param \Drupal\node\Entity\Node $node
+ *   The node for which to find the parent nodes.
+ * @param array $tree
+ *   The parent nodes of the current node.
+ *
+ * @return array
+ *   An array of parent nodes, ordered from the top-level parent to the immediate parent.
+ */
+function mapam_volunteer_og_get_parent_nodes(Node $node, &$tree = []) {
+  $entity_type_id = $node->getEntityTypeId();
+  $bundle_id = $node->bundle();
+  $is_group_content = Og::isGroupContent($entity_type_id, $bundle_id);
+
+  if (!$is_group_content) {
+    return $tree;
+  }
+
+  /** @var \Drupal\og\MembershipManagerInterface $membership_manager */
+  $membership_manager = \Drupal::service('og.membership_manager');
+
+  // Get the og_group audience field value of the pole node.
+  $groups = $membership_manager->getGroups($node);
+  // The groups are returned as a two-dimensional array. Flatten it.
+  $groups = array_reduce($groups, 'array_merge', []);
+  // Get the first group (if any).
+  $group = reset($groups);
+
+  if ($group) {
+    $tree[] = [
+      'text' => $group->label(),
+      'url' => $group->toUrl(),
+    ];
+    // Recursively call the function with the parent node.
+    mapam_volunteer_og_get_parent_nodes($group, $tree);
+  }
+
+  return $tree;
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function mapam_volunteer_og_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+
+  if ($form_id === 'ief_modal_simple_form') {
+    $entity = $form['entity'] ?? NULL;
+    if (!$entity) {
+      return;
+    }
+    $entity_type = $form['entity']['#entity_type'];
+    $bundle = $form['entity']['#bundle'];
+    $group_audience_helper = \Drupal::service('og.group_audience_helper');
+    if ($group_audience_helper->hasGroupAudienceField($entity_type, $bundle)) {
+      ddl('entity has og audience field');
+    }
+
+    foreach ($group_audience_helper->getAllGroupAudienceFields($entity_type, $bundle) as $field) {
+      $field_name = $field->getName();
+      //if ($entity->get($field_name)->isEmpty()) {
+      //  $entity->set($field_name, [
+      //    'target_id' => $parent_entity_id,
+      //  ]);
+      //}
+      // Hide OG field in the form.
+      //$form['entity']['#after_build'][] = '::mapam_volunteer_og_hide_og_field';
+    }
+  }
+}
+
+/**
+ * After build callback to hide OG audience field.
+ */
+function mapam_volunteer_og_hide_og_field(array $form, FormStateInterface $form_state) {
+  $storage = $form_state->getStorage();
+  $entity = $storage['entity'];
+  $og_field = $this->findOgAudienceField($entity);
+
+  if ($og_field && isset($form[$og_field])) {
+    $form[$og_field]['#access'] = FALSE;
+  }
+
+  return $form;
+}
