@@ -49,7 +49,14 @@
                 ? DateTime.fromJSDate(range.start)
                 : DateTime.fromJSDate(range.start).startOf('day').plus({ days: i });
 
-              button.innerText = dayDate.toLocaleString(DateTime.DATE_MED);
+              // Format the button label to a custom format, e.g. "Lun. 24 Jan". witout the year to save space.
+              if (totalDays <= 7) {
+                button.textContent  = dayDate.toLocaleString({ weekday: 'short', day: '2-digit', month: 'short' });
+              }
+              else {
+                button.textContent  = dayDate.toLocaleString({ weekday: 'short', day: '2-digit' });
+              }
+              
               button.onclick = function () {
                 navByDay(timeline, dayDate);
               };
