@@ -53,7 +53,8 @@ class DashboardController extends ControllerBase {
 
     // Build the node using the 'dashboard' view mode.
     $build = $view_builder->view($node, 'dashboard');
-    $build['#attached']['library'][] = 'mapam_volunteer/dasboard';
+    $build['#attached']['library'][] = 'mapam_volunteer/dashboard:
+';
     return $build;
   }
 
@@ -71,7 +72,8 @@ class DashboardController extends ControllerBase {
 
     // Build the node using the 'dashboard' view mode.
     $build = $view_builder->view($user, 'dashboard');
-    $build['#attached']['library'][] = 'mapam_volunteer/dasboard';
+    $build['#attached']['library'][] = 'mapam_volunteer/dashboard:
+';
     return $build;
   }
 
