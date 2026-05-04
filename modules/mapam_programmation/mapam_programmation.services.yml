@@ -1,0 +1,6 @@
+services:
+  mapam_programmation.session_subscriber:
+    class: Drupal\mapam_programmation\EventSubscriber\SessionSubscriber
+    arguments: ['@current_user', '@entity_type.manager']
+    tags:
+      - { name: event_subscriber }

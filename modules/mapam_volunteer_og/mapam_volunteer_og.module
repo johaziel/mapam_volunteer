@@ -128,13 +128,13 @@ function mapam_volunteer_og_form_alter(&$form, FormStateInterface $form_state, $
 
     foreach ($group_audience_helper->getAllGroupAudienceFields($entity_type, $bundle) as $field) {
       $field_name = $field->getName();
-      //if ($entity->get($field_name)->isEmpty()) {
+      // if ($entity->get($field_name)->isEmpty()) {
       //  $entity->set($field_name, [
       //    'target_id' => $parent_entity_id,
       //  ]);
       //}
       // Hide OG field in the form.
-      //$form['entity']['#after_build'][] = '::mapam_volunteer_og_hide_og_field';
+      // $form['entity']['#after_build'][] = '::mapam_volunteer_og_hide_og_field';
     }
   }
 }
