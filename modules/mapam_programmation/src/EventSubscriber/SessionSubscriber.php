@@ -131,7 +131,7 @@ class SessionSubscriber implements EventSubscriberInterface {
     // Copy the body and field_smart_date from the session to the timeslot.
     if ($session->hasField('body') && !$session->get('body')->isEmpty()) {
       $timeslot_ref->set('body', [
-        'value'  => $session->get('body')->value,
+        'value'  => $session->get('body')->value . "\n\n" . ($timeslot_ref->get('body')->value ?? NULL),
         'format' => $session->get('body')->format,
       ]);
     }
