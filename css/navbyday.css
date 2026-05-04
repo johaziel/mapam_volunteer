@@ -7,3 +7,17 @@
   border: 1px solid var(--gin-border-color-form-element);
   border-radius: 4px; 
 }
+
+.timeline-toggle-editable {
+  position:absolute;
+  top:40px;
+  right:50px;
+  z-index:1000;
+  width:50px;
+  height:30px;
+  background-color:var(--gin-color-primary-light-hover);
+  border: 1px solid var(--gin-border-color-form-element);
+  border-radius:3px;
+  line-height: 30px;
+  text-align: center;
+}

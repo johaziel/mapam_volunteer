@@ -1,7 +1,7 @@
 (function ($, Drupal) {
   Drupal.behaviors.sortFacetSelect = {
     attach: function (context, settings) {
-      console.log('Sorting date facet options...');
+      
       const $select = $('select[name="field_smart_date"]', context);
 
       if (!$select.length) return;

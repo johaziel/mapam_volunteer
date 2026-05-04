@@ -13,9 +13,48 @@
       once('navByDay', 'body', context).forEach(function () {
 
         // Event fired by the parent module's JS after new vis.Timeline().
-        $(document).on('visTimelineReady.arrows', function (event, timelineId, timeline) {
+        $(document).on('visTimelineReady', function (event, timelineId, timeline) {
 
           if (!timeline) return;
+
+          // Add a toggle editable: true/false button to the timeline's DOM for testing.
+          var toggleButton = document.createElement("div");
+          
+          // Determine initial editable state (default to false if undefined).
+          let isEditable = timeline.options.editable ?? false;
+
+          // Normalisation (au cas où editable était undefined au départ)
+          timeline.setOptions({
+            editable: {
+              add: isEditable,
+              updateTime: isEditable,
+              updateGroup: isEditable,
+              remove: isEditable
+            }
+          });
+          // add boot strap icon to the button
+          toggleButton.innerHTML = isEditable ? '<i class="bi bi-unlock-fill"></i>' : '<i class="bi bi-lock-fill"></i>';
+          // add a classe name
+          toggleButton.className = "timeline-toggle-editable";
+
+          console.log("Initial editable state:", timeline.options.editable);
+          // Set editable to true on load for testing.
+
+
+          toggleButton.onclick = function () {
+            isEditable = !isEditable;
+            timeline.setOptions({
+              editable: {
+                add: isEditable,
+                updateTime: isEditable,
+                updateGroup: isEditable,
+                remove: isEditable
+              }
+            });
+            toggleButton.innerHTML = isEditable ? '<i class="bi bi-unlock-fill"></i>' : '<i class="bi bi-lock-fill"></i>';
+          };
+          timeline.dom.container.parentNode.insertBefore(toggleButton, timeline.dom.container);
+
           var range = timeline.getWindow();
           var visibleItems = timeline.itemsData.get();
 
