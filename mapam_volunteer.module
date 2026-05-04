@@ -830,6 +830,7 @@ function mapam_volunteer_views_pre_render(ViewExecutable $view) {
       break;
 
     case 'programmation_index':
+      $view->element['#attached']['library'][] = 'mapam_volunteer/bootstrap';
       $view->element['#attached']['library'][] = 'mapam_volunteer/navbyday';
   }
 }
