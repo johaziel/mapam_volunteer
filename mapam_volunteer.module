@@ -35,7 +35,6 @@ use Drupal\Core\Menu\MenuLinkInterface;
  */
 function mapam_volunteer_page_attachments(array &$attachments) {
   $attachments['#attached']['library'][] = 'mapam_volunteer/global-styling';
-  $attachments['#attached']['library'][] = 'mapam_volunteer/navbyday';
 }
 
 /**
@@ -818,12 +817,20 @@ function mapam_volunteer_views_pre_render(ViewExecutable $view) {
   switch ($view->id()) {
     case 'pole_timeslots_index':
       $view->element['#attached']['library'][] = 'mapam_volunteer/bootstrap';
+      $view->element['#attached']['library'][] = 'mapam_volunteer/navbyday';
       break;
 
     case 'event_volunteers':
     case 'pole_volunteers':
       $view->element['#attached']['library'][] = 'mapam_volunteer/bootstrap_icons';
       break;
+
+    case 'all_timeslots':
+      $view->element['#attached']['library'][] = 'mapam_volunteer/sort_date_facet';
+      break;
+
+    case 'programmation_index':
+      $view->element['#attached']['library'][] = 'mapam_volunteer/navbyday';
   }
 }
 

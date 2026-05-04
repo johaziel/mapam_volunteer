@@ -40,3 +40,11 @@ navbyday:
     - core/once
     - core/jquery
     - views_vis_timeline/library.luxon3
+
+sort_date_facet:
+  version: 1.0
+  js:
+    js/sortDateFacet.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
