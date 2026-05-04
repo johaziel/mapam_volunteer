@@ -8,16 +8,29 @@
   border-radius: 4px; 
 }
 
+.vis-timeline-container {
+  position:relative;
+}
+
 .timeline-toggle-editable {
   position:absolute;
-  top:40px;
+  top:10px;
   right:50px;
-  z-index:1000;
-  width:50px;
-  height:30px;
-  background-color:var(--gin-color-primary-light-hover);
-  border: 1px solid var(--gin-border-color-form-element);
-  border-radius:3px;
-  line-height: 30px;
   text-align: center;
+  padding:5px;
+}
+.timeline-toggle-editable i{
+  font-size:2rem;
+  border:1px solid;
+  border-radius:5px;
+}
+.timeline-toggle-editable i.bi-lock-fill{
+  border-color:var(--gin-color-green-light);
+  color: var(--gin-color-green);
+  background-color: var(--gin-color-green-lightest);
+}
+.timeline-toggle-editable i.bi-unlock-fill{
+  border-color:var(--gin-color-danger-light);
+  color:var(--gin-color-danger);
+  background-color: var(--gin-color-danger-lightest);
 }

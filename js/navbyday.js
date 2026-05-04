@@ -19,8 +19,6 @@
 
           // Add a toggle editable: true/false button to the timeline's DOM for testing.
           var toggleButton = document.createElement("div");
-          
-          // Determine initial editable state (default to false if undefined).
           let isEditable = timeline.options.editable ?? false;
 
           // Normalisation (au cas où editable était undefined au départ)
@@ -32,14 +30,11 @@
               remove: isEditable
             }
           });
-          // add boot strap icon to the button
+
           toggleButton.innerHTML = isEditable ? '<i class="bi bi-unlock-fill"></i>' : '<i class="bi bi-lock-fill"></i>';
-          // add a classe name
+          toggleButton.title = isEditable ? 'Click to lock timeline (disable editing)' : 'Click to unlock timeline (enable editing)';
+          toggleButton.style.cursor = "pointer";
           toggleButton.className = "timeline-toggle-editable";
-
-          console.log("Initial editable state:", timeline.options.editable);
-          // Set editable to true on load for testing.
-
 
           toggleButton.onclick = function () {
             isEditable = !isEditable;
