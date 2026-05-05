@@ -512,7 +512,7 @@ function mapam_volunteer_preprocess_views_view_field(&$variables) {
       return;
     }
     $url = Url::fromRoute('entity.node.canonical', ['node' => $node_id]);
-    
+
     $url->setOptions([
       'attributes' => [
         'class'                => ['use-ajax'],
@@ -522,10 +522,14 @@ function mapam_volunteer_preprocess_views_view_field(&$variables) {
     ]);
 
     // Replace text by bootstrp-icon <i class="bi bi-people-fill"></i>.
-    $variables['output'] = Link::fromTextAndUrl(
-      '<i class="bi bi-people-fill"></i>',
-      $url
-    )->toRenderable();
+    // Link::fromTextAndUrl('<i class="bi bi-people-fill"></i>', $url); not working.
+    $variables['output'] = [
+      '#type' => 'link',
+      '#title' => [
+        '#markup' => '<i class="bi bi-people-fill"></i>',
+      ],
+      '#url' => $url,
+    ];
 
     // Attacher la librairie Ajax
     $variables['output']['#attached']['library'][] = 'core/drupal.ajax';
