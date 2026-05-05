@@ -14,7 +14,7 @@
 
         // Event fired by the parent module's JS after new vis.Timeline().
         $(document).on('visTimelineReady', function (event, timelineId, timeline) {
-
+          console.log('Received visTimelineReady event for timelineId:', timelineId);
           if (!timeline) return;
 
           // Add a toggle editable: true/false button to the timeline's DOM for testing.
