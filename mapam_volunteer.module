@@ -502,8 +502,13 @@ function mapam_volunteer_preprocess_views_view_field(&$variables) {
   $field = $variables['field'];
 
   if ($view->id() === 'programmation_index' && $field->field === 'field_volunteer_needs') {
-    ddl($variables);
-    $url = Url::fromRoute('entity.node.canonical', ['node' => 3]);
+
+    // Get the id from field_volunteer_needs target id and load the node.
+    $node_id = $variables['entity']->get('field_volunteer_needs')->target_id;
+    if (!$node_id) {
+      return;
+    }
+    $url = Url::fromRoute('entity.node.canonical', ['node' => $node_id]);
 
     $url->setOptions([
       'attributes' => [
