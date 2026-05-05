@@ -516,7 +516,7 @@ function mapam_volunteer_preprocess_views_view_field(&$variables) {
     $url->setOptions([
       'attributes' => [
         'class'                => ['use-ajax'],
-        'data-dialog-type'     => 'modal',
+        'data-dialog-type'     => 'dialog',
         'data-dialog-options'  => json_encode(['width' => 800]),
       ],
     ]);
