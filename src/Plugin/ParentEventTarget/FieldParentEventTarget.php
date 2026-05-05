@@ -30,7 +30,7 @@ class FieldParentEventTarget extends ParentEventTargetBase {
    */
   public function getParentEventTarget(EntityInterface $entity) {
     // Use the back reference service to find the parent event.
-    ddl($entity, 'volunteer slot entity');
+    ddl('getParentEventTarget');
     $back_reference_service = \Drupal::service('entity_back_reference.back_reference_finder');
     $back_ref_field = $back_reference_service->getReferencingFieldList('node', $entity->bundle());
 
