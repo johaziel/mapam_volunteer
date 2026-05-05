@@ -28,6 +28,7 @@ use Drupal\Core\Render\Markup;
 use Drupal\Core\Breadcrumb\Breadcrumb;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Link;
+use Drupal\Core\Url;
 use Drupal\Core\Menu\MenuLinkInterface;
 
 /**
@@ -491,8 +492,35 @@ function mapam_volunteer_views_data_alter(array &$data) {
   $data['node_field_data']['mapam_volunteer_modal_entity_operations'] = $modal_operations_field;
   $data['search_api_datasource_programmation_entity_node']['mapam_volunteer_modal_entity_operations'] = $modal_operations_field;
   $data['search_api_datasource_timeslots_index_entity_node']['mapam_volunteer_modal_entity_operations'] = $modal_operations_field;
+}
 
-  ddl($data);
+/**
+ * Implements hook_preprocess_views_view_field().
+ */
+function mapam_volunteer_preprocess_views_view_field(&$variables) {
+  $view = $variables['view'];
+  $field = $variables['field'];
+
+  if ($view->id() === 'programmation_index' && $field->field === 'field_volunteer_needs') {
+    ddl($variables);
+    $url = Url::fromRoute('entity.node.canonical', ['node' => 3]);
+
+    $url->setOptions([
+      'attributes' => [
+        'class'                => ['use-ajax'],
+        'data-dialog-type'     => 'modal',
+        'data-dialog-options'  => json_encode(['width' => 800]),
+      ],
+    ]);
+
+    $variables['output'] = Link::fromTextAndUrl(
+      t('Edit'),
+      $url
+    )->toRenderable();
+
+    // Attacher la librairie Ajax
+    $variables['output']['#attached']['library'][] = 'core/drupal.ajax';
+  }
 }
 
 /**
