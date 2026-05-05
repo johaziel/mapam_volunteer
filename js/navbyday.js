@@ -11,10 +11,8 @@
 
       // ── Listen for vis.Timeline instances becoming ready ──────────────────
       once('navByDay', 'body', context).forEach(function () {
-        console.log('navByDay behavior attached, listening for visTimelineReady event');
         // Event fired by the parent module's JS after new vis.Timeline().
         $(document).on('visTimelineReady', function (event, timelineId, timeline) {
-          console.log('Received visTimelineReady event for timelineId:', timelineId);
           if (!timeline) return;
 
           // Add a toggle editable: true/false button to the timeline's DOM for testing.
