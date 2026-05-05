@@ -481,6 +481,18 @@ function mapam_volunteer_views_data_alter(array &$data) {
       'id' => 'calculate_timeslot_ratio',
     ],
   ];
+  $modal_operations_field = [
+    'field' => [
+      'title' => t('Modal Operations links'),
+      'help' => t('Provides links to perform entity operations in Modal.'),
+      'id' => 'modal_entity_operations',
+    ],
+  ];
+  $data['node_field_data']['modal_entity_operations'] = $modal_operations_field;
+  $data['search_api_datasource_programmation_entity_node']['modal_entity_operations'] = $modal_operations_field;
+  $data['search_api_datasource_timeslots_index_entity_node']['modal_entity_operations'] = $modal_operations_field;
+
+  ddl($data);
 }
 
 /**
