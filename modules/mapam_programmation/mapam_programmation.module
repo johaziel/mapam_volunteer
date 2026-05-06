@@ -54,12 +54,11 @@ function mapam_volunteer_preprocess_views_view_field(&$variables) {
 
     $key = 'entity:node/search_api_reverse_entity_references_node__field_volunteer_needs';
 
-    if (!isset($row->_relationship_objects[$key])) {
+    if (!isset($row->_relationship_objects[$key]) && !empty($row->_relationship_objects[$key])) {
       return;
     }
 
     $relationship_objects = $row->_relationship_objects[$key];
-
     foreach ($relationship_objects as $object) {
       // $object est un EntityAdapter, on récupère le Node via getValue()
       $related_node = $object->getValue();
@@ -82,6 +81,9 @@ function mapam_volunteer_preprocess_views_view_field(&$variables) {
           ],
           '#url' => $url,
         ];
+        // Attacher la librairie Ajax.
+        $variables['output']['#attached']['library'][] = 'core/drupal.ajax';
+        $variables['output']['#attached']['library'][] = 'mapam_volunteer/bootstrap_icons';
       }
     }
   }
