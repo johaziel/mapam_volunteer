@@ -82,7 +82,10 @@
   background-color: unset;
   opacity: 1;
 }
-
+table {
+  caption-side: top;
+  border-collapse: collapse;
+}
 /*
 .view-display-id-block_2 .gin-layer-wrapper{
   border:0;
