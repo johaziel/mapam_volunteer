@@ -837,6 +837,19 @@ function mapam_volunteer_views_pre_render(ViewExecutable $view) {
     case 'pole_volunteers':
       $view->element['#attached']['library'][] = 'mapam_volunteer/bootstrap_icons';
       break;
+
+    case 'all_timeslots':
+      $view->element['#attached']['library'][] = 'mapam_volunteer/bootstrap';
+      $view->element['#attached']['library'][] = 'mapam_volunteer/bootstrap_icons';
+      $view->element['#attached']['library'][] = 'mapam_volunteer/sort_date_facet';
+      break;
+
+    case 'programmation_index':
+      $view->element['#attached']['library'][] = 'mapam_volunteer/bootstrap';
+      $view->element['#attached']['library'][] = 'mapam_volunteer/bootstrap_icons';
+      $view->element['#attached']['library'][] = 'mapam_volunteer/navbyday';
+      $view->element['#attached']['library'][] = 'mapam_volunteer/sort_date_facet';
+      break;
   }
 }
 

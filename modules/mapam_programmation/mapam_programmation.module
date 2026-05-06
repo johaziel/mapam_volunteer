@@ -94,19 +94,5 @@ function mapam_volunteer_preprocess_views_view_field(&$variables) {
  * Implements hook_views_pre_render().
  */
 function mapam_volunteer_og_views_pre_render(ViewExecutable $view) {
-  switch ($view->id()) {
 
-    case 'all_timeslots':
-      $view->element['#attached']['library'][] = 'mapam_volunteer/bootstrap';
-      $view->element['#attached']['library'][] = 'mapam_volunteer/bootstrap_icons';
-      $view->element['#attached']['library'][] = 'mapam_volunteer/sort_date_facet';
-      break;
-
-    case 'programmation_index':
-      $view->element['#attached']['library'][] = 'mapam_volunteer/bootstrap';
-      $view->element['#attached']['library'][] = 'mapam_volunteer/bootstrap_icons';
-      $view->element['#attached']['library'][] = 'mapam_volunteer/navbyday';
-      $view->element['#attached']['library'][] = 'mapam_volunteer/sort_date_facet';
-      break;
-  }
 }
