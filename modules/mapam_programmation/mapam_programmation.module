@@ -1,0 +1,108 @@
+<?php
+
+/**
+ * @file
+ * Mapam Programmation module.
+ */
+
+use Drupal\node\Entity\Node;
+use Drupal\Core\Url;
+
+/**
+ * Implements hook_preprocess_views_view_field().
+ */
+function mapam_volunteer_preprocess_views_view_field(&$variables) {
+  $view = $variables['view'];
+  $field = $variables['field'];
+  $row = $variables['row'];
+
+  if ($view->id() === 'programmation_index' && $field->field === 'field_volunteer_needs') {
+    $entity = $row->_entity;
+    // Get the id from field_volunteer_needs target id and load the node.
+    if (!$entity->hasField('field_volunteer_needs') || $entity->get('field_volunteer_needs')->isEmpty()) {
+      return;
+    }
+    $node_id = $entity->get('field_volunteer_needs')->target_id;
+    if (!$node_id) {
+      return;
+    }
+    $url = Url::fromRoute('entity.node.canonical', ['node' => $node_id]);
+
+    $url->setOptions([
+      'attributes' => [
+        'class'                => ['use-ajax'],
+        'data-dialog-type'     => 'dialog',
+        'data-dialog-options'  => json_encode(['width' => 800]),
+      ],
+    ]);
+
+    // Replace text by bootstrp-icon <i class="bi bi-people-fill"></i>.
+    // Link::fromTextAndUrl('<i class="bi bi-people-fill"></i>', $url); not working.
+    $variables['output'] = [
+      '#type' => 'link',
+      '#title' => [
+        '#markup' => '<i class="bi bi-people-fill"></i>',
+      ],
+      '#url' => $url,
+    ];
+
+    // Attacher la librairie Ajax.
+    $variables['output']['#attached']['library'][] = 'core/drupal.ajax';
+  }
+
+  if ($view->id() === 'all_timeslots'&& $field->field === 'nid_prog') {
+
+    $key = 'entity:node/search_api_reverse_entity_references_node__field_volunteer_needs';
+
+    if (!isset($row->_relationship_objects[$key])) {
+      return;
+    }
+
+    $relationship_objects = $row->_relationship_objects[$key];
+
+    foreach ($relationship_objects as $object) {
+      // $object est un EntityAdapter, on récupère le Node via getValue()
+      $related_node = $object->getValue();
+
+      if ($related_node instanceof Node) {
+        $url = Url::fromRoute('entity.node.canonical', ['node' => $related_node->id()]);
+
+        $url->setOptions([
+          'attributes' => [
+            'class'                => ['use-ajax'],
+            'data-dialog-type'     => 'dialog',
+            'data-dialog-options'  => json_encode(['width' => 800]),
+          ],
+        ]);
+
+        $variables['output'] = [
+          '#type' => 'link',
+          '#title' => [
+            '#markup' => '<i class="bi bi-calendar-range"></i>',
+          ],
+          '#url' => $url,
+        ];
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_views_pre_render().
+ */
+function mapam_volunteer_og_views_pre_render(ViewExecutable $view) {
+  switch ($view->id()) {
+
+    case 'all_timeslots':
+      $view->element['#attached']['library'][] = 'mapam_volunteer/bootstrap';
+      $view->element['#attached']['library'][] = 'mapam_volunteer/bootstrap_icons';
+      $view->element['#attached']['library'][] = 'mapam_volunteer/sort_date_facet';
+      break;
+
+    case 'programmation_index':
+      $view->element['#attached']['library'][] = 'mapam_volunteer/bootstrap';
+      $view->element['#attached']['library'][] = 'mapam_volunteer/bootstrap_icons';
+      $view->element['#attached']['library'][] = 'mapam_volunteer/navbyday';
+      break;
+  }
+}
