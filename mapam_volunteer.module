@@ -534,14 +534,18 @@ function mapam_volunteer_preprocess_views_view_field(&$variables) {
     // Attacher la librairie Ajax.
     $variables['output']['#attached']['library'][] = 'core/drupal.ajax';
   }
-  if ($view->id() === 'all_timeslots') {
-    ddl($field->field);
+  if ($view->id() === 'all_timeslots'&& $field->field === 'nid_prog') {
+    
+    if (!empty($variables['row']->nid_prog)) {
+      ddl($field);
+      //$variables['row']->nid_prog = Link::fromTextAndUrl($variables['row']->nid_prog, Url::fromRoute('entity.node.canonical', ['node' => $variables['row']->nid_prog]));
+    }
   }
 
-  if ($view->id() === 'all_timeslots' && $field->field === 'field_volunteer_needs') {
+  if ($view->id() === 'all_timeslots' && $field->field === '__nid_prog') {
     $entity = $variables['row']->_entity;
     // Get the id from field_volunteer_needs target id and load the node.
-    if (!$entity->hasField('field_volunteer_needs') || $entity->get('field_volunteer_needs')->isEmpty()) {
+    if (!$entity->hasField('nid_prog') || $entity->get('field_volunteer_needs')->isEmpty()) {
       return;
     }
     $node_id = $entity->get('field_volunteer_needs')->target_id;
