@@ -173,6 +173,9 @@ class ModalEntityOperations extends FieldPluginBase {
         'data-dialog-options' => json_encode([
           'width' => $this->options['dialog_width'],
           'height' => 600,
+          'draggable' => TRUE,
+          'resizable' => TRUE,
+          'position' => json_encode(['my' => 'center', 'at' => 'center', 'of' => 'window']),
         ]),
       ];
     }
