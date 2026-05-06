@@ -531,7 +531,44 @@ function mapam_volunteer_preprocess_views_view_field(&$variables) {
       '#url' => $url,
     ];
 
-    // Attacher la librairie Ajax
+    // Attacher la librairie Ajax.
+    $variables['output']['#attached']['library'][] = 'core/drupal.ajax';
+  }
+  if ($view->id() === 'all_timeslots') {
+    ddl($field->field);
+  }
+
+  if ($view->id() === 'all_timeslots' && $field->field === 'field_volunteer_needs') {
+    $entity = $variables['row']->_entity;
+    // Get the id from field_volunteer_needs target id and load the node.
+    if (!$entity->hasField('field_volunteer_needs') || $entity->get('field_volunteer_needs')->isEmpty()) {
+      return;
+    }
+    $node_id = $entity->get('field_volunteer_needs')->target_id;
+    if (!$node_id) {
+      return;
+    }
+    $url = Url::fromRoute('entity.node.canonical', ['node' => $node_id]);
+
+    $url->setOptions([
+      'attributes' => [
+        'class'                => ['use-ajax'],
+        'data-dialog-type'     => 'dialog',
+        'data-dialog-options'  => json_encode(['width' => 800]),
+      ],
+    ]);
+
+    // Replace text by bootstrp-icon <i class="bi bi-people-fill"></i>.
+    // Link::fromTextAndUrl('<i class="bi bi-people-fill"></i>', $url); not working.
+    $variables['output'] = [
+      '#type' => 'link',
+      '#title' => [
+        '#markup' => '<i class="bi bi-people-fill"></i>',
+      ],
+      '#url' => $url,
+    ];
+
+    // Attacher la librairie Ajax.
     $variables['output']['#attached']['library'][] = 'core/drupal.ajax';
   }
 }
