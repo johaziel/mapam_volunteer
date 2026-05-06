@@ -535,9 +535,9 @@ function mapam_volunteer_preprocess_views_view_field(&$variables) {
     $variables['output']['#attached']['library'][] = 'core/drupal.ajax';
   }
   if ($view->id() === 'all_timeslots'&& $field->field === 'nid_prog') {
-    
+    ddl($field);
     if (!empty($variables['row']->nid_prog)) {
-      ddl($field);
+      
       //$variables['row']->nid_prog = Link::fromTextAndUrl($variables['row']->nid_prog, Url::fromRoute('entity.node.canonical', ['node' => $variables['row']->nid_prog]));
     }
   }
