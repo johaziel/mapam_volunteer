@@ -36,6 +36,7 @@ use Drupal\Core\Menu\MenuLinkInterface;
  */
 function mapam_volunteer_page_attachments(array &$attachments) {
   $attachments['#attached']['library'][] = 'mapam_volunteer/global-styling';
+  $attachments['#attached']['library'][] = 'mapam_volunteer/fix_modal_close';
 }
 
 /**
