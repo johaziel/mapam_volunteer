@@ -190,6 +190,8 @@ function mapam_volunteer_theme_suggestions_item_list_alter(array &$suggestions, 
 
 /**
  * Implements hook_entity_presave().
+ *
+ * @todo Move this to a subscriber.
  */
 function mapam_volunteer_entity_presave(EntityInterface $entity) {
   // Only act on flagging entities.
@@ -657,7 +659,7 @@ function mapam_volunteer_node_view(array &$build, EntityInterface $entity, Entit
     $occupancy = min($occupancy, 100);
     if ($capacity > 0) {
       // Build a field with label and prgress bar.
-      $build['#attached']['library'][] = 'mapam_volunteer/bootstrap';
+      $build['#attached']['library'][] = 'mapam_volunteer/bootstrap_progress';
       $build['slots_occupancy'] = [
         '#type' => 'container',
         '#attributes' => ['class' => ['slots-occupancy']],
@@ -829,7 +831,7 @@ function mapam_volunteer_bulk_timeslot_form_submit($form, FormStateInterface $fo
 function mapam_volunteer_views_pre_render(ViewExecutable $view) {
   switch ($view->id()) {
     case 'pole_timeslots_index':
-      // $view->element['#attached']['library'][] = 'mapam_volunteer/bootstrap';
+      $view->element['#attached']['library'][] = 'mapam_volunteer/bootstrap';
       $view->element['#attached']['library'][] = 'mapam_volunteer/navbyday';
       break;
 

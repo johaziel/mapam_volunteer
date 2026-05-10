@@ -126,7 +126,7 @@ class CalculateVolunteerRatio extends NumericField {
     return [
       '#attached' => [
         'library' => [
-          'mapam_volunteer/bootstrap',
+          'mapam_volunteer/bootstrap_progress',
         ],
       ],
       '#type' => 'container',
