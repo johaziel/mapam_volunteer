@@ -16,7 +16,7 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Messenger\MessengerTrait;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\flag\FlagServiceInterface;
-use Drupal\og\MembershipManagerInterface;
+use Drupal\mapam_volunteer_og\VolunteerOgManagerInterface;
 use Drupal\message\Entity\Message;
 use Drupal\message_notify\MessageNotifyInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
@@ -52,11 +52,11 @@ class TimeslotSubscriber implements EventSubscriberInterface {
   protected $flagService;
 
   /**
-   * The OG membership manager.
+   * The Volunteer OG manager.
    *
-   * @var \Drupal\og\MembershipManagerInterface|null
+   * @var \Drupal\mapam_volunteer_og\VolunteerOgManagerInterface|null
    */
-  protected $membershipManager;
+  protected $volunteerOgManager;
 
   /**
    * The message notification service.
@@ -81,18 +81,18 @@ class TimeslotSubscriber implements EventSubscriberInterface {
    *   The entity type manager.
    * @param \Drupal\flag\FlagServiceInterface $flag_service
    *   The flag service.
-   * @param \Drupal\og\MembershipManagerInterface $membership_manager
+   * @param \Drupal\mapam_volunteer_og\VolunteerOgManagerInterface $volunteer_og_manager
    *   The OG membership manager.
    * @param \Drupal\message_notify\MessageNotifyInterface $message_notify
    *   The message notification service.
    * @param \Drupal\Core\Database\Connection $database
    *   The database connection.
    */
-  public function __construct(AccountInterface $current_user, EntityTypeManagerInterface $entity_type_manager, FlagServiceInterface $flag_service, MembershipManagerInterface $membership_manager, MessageNotifyInterface $message_notify, Connection $database) {
+  public function __construct(AccountInterface $current_user, EntityTypeManagerInterface $entity_type_manager, FlagServiceInterface $flag_service, VolunteerOgManagerInterface $volunteer_og_manager, MessageNotifyInterface $message_notify, Connection $database) {
     $this->currentUser = $current_user;
     $this->entityTypeManager = $entity_type_manager;
     $this->flagService = $flag_service;
-    $this->membershipManager = $membership_manager;
+    $this->volunteerOgManager = $volunteer_og_manager;
     $this->messageNotifier = $message_notify;
     $this->database = $database;
   }
@@ -209,37 +209,6 @@ class TimeslotSubscriber implements EventSubscriberInterface {
   }
 
   /**
-   * Return the parent group of the given entity.
-   */
-  protected function getParentGroup(EntityInterface $entity) {
-    $groups = $this->membershipManager->getGroups($entity);
-    // The groups are returned as a two-dimensional array. Flatten it.
-    $groups = array_reduce($groups, 'array_merge', []);
-    // Get the first group (if any).
-    $group = reset($groups);
-
-    return $group;
-  }
-
-  /**
-   * Recursively finds the parent group of the given entity.
-   */
-  protected function findGrandParentGroup(EntityInterface $entity) {
-    $groups = $this->membershipManager->getGroups($entity);
-    // The groups are returned as a two-dimensional array. Flatten it.
-    $groups = array_reduce($groups, 'array_merge', []);
-    // Get the first group (if any).
-    $group = reset($groups);
-
-    if ($group && $group->bundle() === 'event') {
-      $this->parentGroup = $group;
-      return;
-    }
-    $this->findGrandParentGroup($group);
-
-  }
-
-  /**
    * Get all volonteer from the parent group.
    *
    * @param \Drupal\Core\Entity\EntityInterface $entity
@@ -248,7 +217,7 @@ class TimeslotSubscriber implements EventSubscriberInterface {
   protected function getFlaggingUsersFromParentGroup(EntityInterface $entity) {
 
     // Get the parent group of the entity.
-    $parent_group = $this->getParentGroup($entity);
+    $parent_group = $this->volunteerOgManager->getParentGroup($entity);
     if (!$parent_group) {
       return [];
     }

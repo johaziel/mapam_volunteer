@@ -4,6 +4,7 @@ namespace Drupal\mapam_volunteer_og\Plugin\ParentEventTarget;
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\mapam_volunteer\Plugin\ParentEventTargetBase;
+use Drupal\og\Og;
 
 /**
  * Provides default user source (all users).
@@ -32,60 +33,43 @@ class OgParentEventTarget extends ParentEventTargetBase {
   protected $membershipManager;
 
   /**
-   * The parent group entity.
+   * The Volunteer OG manager.
    *
-   * @var \Drupal\Core\Entity\EntityInterface|null
+   * @var \Drupal\mapam_volunteer_og\VolunteerOgManagerInterface|null
    */
-  protected $parentGroup = NULL;
+  protected $volunteerOgManager;
 
   /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
-    return new static($configuration, $plugin_id, $plugin_definition, $container->get('og.group_type_manager'));
+    $instance = new static($configuration, $plugin_id, $plugin_definition);
+
+    $instance->groupTypeManager = $container->get('og.group_type_manager');
+    $instance->membershipManager = $container->get('og.membership_manager');
+    $instance->volunteerOgManager = $container->get('mapam_volunteer_og.volunteer_og_manager');
+
+    return $instance;
   }
 
   /**
    * {@inheritdoc}
    */
   public function applies(EntityInterface $entity) {
-    $this->groupTypeManager = \Drupal::service('og.group_type_manager');
 
-    return $this->groupTypeManager->isGroup($entity->getEntityTypeId(), $entity->bundle()) ||
-           $this->groupTypeManager->isGroupContent($entity->getEntityTypeId(), $entity->bundle());
+    return Og::isGroup($entity->getEntityTypeId(), $entity->bundle()) ||
+           Og::isGroupContent($entity->getEntityTypeId(), $entity->bundle());
   }
 
   /**
    * {@inheritdoc}
    */
   public function getParentEventTarget(EntityInterface $entity) {
-    $this->groupTypeManager = \Drupal::service('og.group_type_manager');
-    $this->membershipManager = \Drupal::service('og.membership_manager');
 
     // Recusively find the parent group if the entity is group content.
-    $this->findGrandParentGroup($entity);
+    $parent_group = $this->volounteerOgManager->findGrandParentGroup($entity);
 
-    if ($this->parentGroup && $this->parentGroup->bundle() === 'event') {
-      return $this->parentGroup;
-    }
-
-  }
-
-  /**
-   * Recursively finds the parent group of the given entity.
-   */
-  protected function findGrandParentGroup(EntityInterface $entity) {
-    $groups = $this->membershipManager->getGroups($entity);
-    // The groups are returned as a two-dimensional array. Flatten it.
-    $groups = array_reduce($groups, 'array_merge', []);
-    // Get the first group (if any).
-    $group = reset($groups);
-
-    if ($group && $group->bundle() === 'event') {
-      $this->parentGroup = $group;
-      return;
-    }
-    $this->findGrandParentGroup($group);
+    return $parent_group;
 
   }
 

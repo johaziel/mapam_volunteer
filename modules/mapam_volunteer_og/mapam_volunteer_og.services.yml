@@ -1,4 +1,9 @@
 services:
+  mapam_volunteer_og.volunteer_og_manager:
+    class: Drupal\mapam_volunteer_og\VolunteerOgManager
+    arguments: ['@entity_type.manager', '@og.membership_manager']
+    tags:
+      - { name: service_container }
   mapam_volunteer_og.flag_subscriber:
     class: Drupal\mapam_volunteer_og\EventSubscriber\FlagMessageSubscriber
     arguments: ['@current_user', '@entity_type.manager', '@flag', '@og.membership_manager', '@message_notify.sender', '@database']
@@ -6,6 +11,11 @@ services:
       - { name: event_subscriber }
   mapam_volunteer_og.timeslot_subscriber:
     class: Drupal\mapam_volunteer_og\EventSubscriber\TimeslotSubscriber
-    arguments: ['@current_user', '@entity_type.manager', '@flag', '@og.membership_manager', '@message_notify.sender', '@database']
+    arguments: ['@current_user', '@entity_type.manager', '@flag', '@mapam_volunteer_og.volunteer_og_manager', '@message_notify.sender', '@database']
+    tags:
+      - { name: event_subscriber }
+  mapam_volunteer.flag_fse_new_user_subscriber:
+    class: Drupal\mapam_volunteer_og\EventSubscriber\FlagFseNewUserSubscriber
+    arguments: ['@entity_type.manager']
     tags:
       - { name: event_subscriber }

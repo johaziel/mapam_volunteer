@@ -48,8 +48,10 @@ function mapam_volunteer_og_custom_preprocess_breadcrumb(&$variables) {
 
     if ($node instanceof Node && in_array($node->bundle(), ['pole', 'timeslot'])) {
       $variables['breadcrumb'] = [$variables['breadcrumb'][0]];
-      // Call a recursive function to get the parent nodes of the current node.
-      $parent_nodes = mapam_volunteer_og_get_parent_nodes($node);
+
+      // Call a recursive function to get the tree of parent nodes of the current node.
+      $volunteer_og_manager = \Drupal::service('mapam_volunteer_og.volunteer_og_manager');
+      $parent_nodes = $volunteer_og_manager->getParentNodesTree($node);
       // Reverse the order of the parent nodes to have the top-level parent first.
       $parent_nodes = array_reverse($parent_nodes);
 
@@ -65,48 +67,6 @@ function mapam_volunteer_og_custom_preprocess_breadcrumb(&$variables) {
       ];
     }
   }
-}
-
-/**
- * Recursive function to get the parent nodes of a given node.
- *
- * @param \Drupal\node\Entity\Node $node
- *   The node for which to find the parent nodes.
- * @param array $tree
- *   The parent nodes of the current node.
- *
- * @return array
- *   An array of parent nodes, ordered from the top-level parent to the immediate parent.
- */
-function mapam_volunteer_og_get_parent_nodes(Node $node, &$tree = []) {
-  $entity_type_id = $node->getEntityTypeId();
-  $bundle_id = $node->bundle();
-  $is_group_content = Og::isGroupContent($entity_type_id, $bundle_id);
-
-  if (!$is_group_content) {
-    return $tree;
-  }
-
-  /** @var \Drupal\og\MembershipManagerInterface $membership_manager */
-  $membership_manager = \Drupal::service('og.membership_manager');
-
-  // Get the og_group audience field value of the pole node.
-  $groups = $membership_manager->getGroups($node);
-  // The groups are returned as a two-dimensional array. Flatten it.
-  $groups = array_reduce($groups, 'array_merge', []);
-  // Get the first group (if any).
-  $group = reset($groups);
-
-  if ($group) {
-    $tree[] = [
-      'text' => $group->label(),
-      'url' => $group->toUrl(),
-    ];
-    // Recursively call the function with the parent node.
-    mapam_volunteer_og_get_parent_nodes($group, $tree);
-  }
-
-  return $tree;
 }
 
 /**

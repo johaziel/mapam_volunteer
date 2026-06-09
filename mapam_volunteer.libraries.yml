@@ -36,7 +36,7 @@ bootstrap_progress:
       css/bootstrap-progress.css: {}
 
 navbyday:
-  version: 1.0.10
+  version: 1.0.11
   js:
     js/navbyday.js: {}
   css:
