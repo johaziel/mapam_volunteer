@@ -18,6 +18,7 @@
   right:50px;
   text-align: center;
   padding:5px;
+  z-index: 50;
 }
 .timeline-toggle-editable i{
   font-size:2rem;

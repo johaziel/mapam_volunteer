@@ -1,0 +1,4 @@
+# permission to access node workspace
+access node workspace:
+  title: 'Access Node Workspace'
+  description: 'Allows users to access the workspace for nodes.'

@@ -1,0 +1,15 @@
+mapam_volunteer_og.event_pole.dashboard:
+  route_name: mapam_volunteer_og.event_pole.dashboard
+  base_route: mapam_volunteer_og.event_pole.dashboard
+  title: 'EP Dashboard'
+  weight: 5
+  requirements:
+    _custom_access: '\Drupal\mapam_volunteer_og\Controller\DashboardController::eventPoleAccess'
+
+mapam_volunteer_og.node.workspace:
+  route_name: mapam_volunteer_og.node.workspace
+  base_route: entity.node.canonical
+  title: 'Workspace'
+  weight: 5
+  requirements:
+    _custom_access: '\Drupal\mapam_volunteer_og\Controller\WorkspaceController::nodeWorkspaceAccess'

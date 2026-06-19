@@ -1,0 +1,31 @@
+mapam_volunteer_og.event_pole.dashboard:
+  path: '/event/{event}/pole/{node}/dashboard'
+  #path: '/node/{node}/event/{event}/dashboard'
+  defaults:
+    _controller: '\Drupal\mapam_volunteer_og\Controller\DashboardController::eventPoleDashboard'
+    _title_callback: '\Drupal\mapam_volunteer_og\Controller\DashboardController::eventPoleTitle'
+  requirements:
+    _custom_access: '\Drupal\mapam_volunteer_og\Controller\DashboardController::eventPoleAccess'
+  options:
+    _admin_route: TRUE
+    parameters:
+      node:
+        type: entity:node
+      event:
+        type: entity:node
+
+mapam_volunteer_og.node.workspace:
+  path: '/node/{node}/workspace'
+  #path: '/node/{node}/event/{event}/dashboard'
+  defaults:
+    _controller: '\Drupal\mapam_volunteer_og\Controller\WorkspaceController::nodeWorkspace'
+    _title_callback: '\Drupal\mapam_volunteer_og\Controller\WorkspaceController::nodeWorkspaceTitle'
+  requirements:
+    _custom_access: '\Drupal\mapam_volunteer_og\Controller\WorkspaceController::nodeWorkspaceAccess'
+  options:
+    _admin_route: TRUE
+    parameters:
+      node:
+        type: entity:node
+
+

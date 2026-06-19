@@ -84,17 +84,9 @@ class CountFlagsByPole extends NumericField {
     $entity = $row->_entity;
 
     // Get all timeslots for the current entity.
-    if ($entity->hasField('og_audience')) {
-      // For OG-based implementation, we assume the entity is group content and we need to find the parent group.
-      $timeslots = $this->entityTypeManager->getStorage('node')->loadByProperties(
-        ['type' => 'timeslot', 'og_audience' => $entity->id(), 'status' => 1]
-      );
-    }
-    else {
-      $timeslots = $this->entityTypeManager->getStorage('node')->loadByProperties(
-        ['type' => 'timeslot', 'field_pole' => $entity->id(), 'status' => 1]
-      );
-    }
+    $timeslots = $this->entityTypeManager->getStorage('node')->loadByProperties(
+      ['type' => 'timeslot', 'field_pole' => $entity->id(), 'status' => 1]
+    );
 
     $value = 0;
     foreach ($timeslots as $timeslot) {

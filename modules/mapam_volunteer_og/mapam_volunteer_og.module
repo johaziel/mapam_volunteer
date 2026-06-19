@@ -5,11 +5,9 @@
  * Contains mapam_volunteer_og.module.
  */
 
-use Drupal\Core\Entity\EntityInterface;
 use Drupal\node\Entity\Node;
-use Drupal\og\Entity\OgMembership;
-use Drupal\og\Og;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\views\ViewExecutable;
 
 /**
  * Implements hook_theme_registry_alter().
@@ -75,28 +73,43 @@ function mapam_volunteer_og_custom_preprocess_breadcrumb(&$variables) {
 function mapam_volunteer_og_form_alter(&$form, FormStateInterface $form_state, $form_id) {
 
   if ($form_id === 'ief_modal_simple_form') {
-    $entity = $form['entity'] ?? NULL;
-    if (!$entity) {
-      return;
-    }
-    $entity_type = $form['entity']['#entity_type'];
-    $bundle = $form['entity']['#bundle'];
-    $group_audience_helper = \Drupal::service('og.group_audience_helper');
-    if ($group_audience_helper->hasGroupAudienceField($entity_type, $bundle)) {
-      ddl('entity has og audience field');
-    }
 
-    foreach ($group_audience_helper->getAllGroupAudienceFields($entity_type, $bundle) as $field) {
-      $field_name = $field->getName();
-      // if ($entity->get($field_name)->isEmpty()) {
-      //  $entity->set($field_name, [
-      //    'target_id' => $parent_entity_id,
-      //  ]);
-      //}
-      // Hide OG field in the form.
-      // $form['entity']['#after_build'][] = '::mapam_volunteer_og_hide_og_field';
-    }
   }
+}
+
+/**
+ * Implements hook_inline_entity_form_entity_form_alter().
+ */
+function mapam_volunteer_og_inline_entity_form_entity_form_alter(array &$entity_form, FormStateInterface &$form_state) {
+  // Get context from tempstore.
+  $tempstore = \Drupal::service('tempstore.private')->get('vis_timeline');
+  $context = $tempstore->get('context');
+
+  if ($entity_form['#ief_id'] != 'ief_modal_node_timeslot' || !$context) {
+    return;
+  }
+
+  $event = $context['event'];
+  // Clone the pole field widget and use it as the OG audience widget.
+  $event_widget = $entity_form['field_pole']['widget'][0];
+  $event_widget['target_id']['#default_value'] = $event;
+
+  $entity_form['og_audience']['widget'][0] = $event_widget;
+  // Hide the OG audience field.
+  $entity_form['og_audience']['#access'] = FALSE;
+  // Hide the OG audience field.
+  $entity_form['field_pole']['#access'] = FALSE;
+
+}
+
+/**
+ * Implements hook_form_after_build().
+ *
+ * Runs the 'afterbuild' validation of a form with dependencies.
+ * This function will run only once per form.
+ */
+function mapam_volunteer_og_form_after_build($form, &$form_state) {
+
 }
 
 /**
@@ -112,4 +125,52 @@ function mapam_volunteer_og_hide_og_field(array $form, FormStateInterface $form_
   }
 
   return $form;
+}
+
+/**
+ * Implements hook_views_data_alter().
+ */
+function mapam_volunteer_og_views_data_alter(array &$data) {
+  // Add Count Flags by Pole field.
+  $data['node_field_data']['event_pole_title_link'] = [
+    'field' => [
+      'title' => t('Event Pole Title Link'),
+      'help' => t('Display title of the pole with a link with current event.'),
+      'id' => 'event_pole_title_link',
+    ],
+  ];
+}
+
+/**
+ * Implements hook_views_pre_build().
+ */
+function mapam_volunteer_og_views_pre_build(ViewExecutable $view) {
+  ddl($view->id(), 'views_pre_build');
+  if ($view->id() == 'event_poles_admin') {
+
+    $node = \Drupal::routeMatch()->getParameter('node');
+    ddl($node, 'event_poles_admin');
+    if (!$node instanceof Node || $node->bundle() !== 'event') {
+      return;
+    }
+
+    /** @var \Drupal\mapam_volunteer_og\VolunteerOgManagerInterface $volunteer_og_manager */
+    $volunteer_og_manager = \Drupal::service('mapam_volunteer_og.volunteer_og_manager');
+    $organization = $volunteer_og_manager->getParentGroup($node);
+    if ($organization) {
+
+      $view->setArguments([$organization->id()]);
+      ddl($view->args);
+    }
+  }
+
+}
+
+/**
+ * Implements hook_views_pre_execute().
+ */
+function mapam_volunteer_og_views_pre_execute(ViewExecutable $view) {
+  if ($view->id() == 'pole_timeline_index') {
+    ddl($view->args, 'pole_timeline_index block_1');
+  }
 }

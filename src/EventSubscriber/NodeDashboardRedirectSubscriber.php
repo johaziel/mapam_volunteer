@@ -108,7 +108,7 @@ class NodeDashboardRedirectSubscriber implements EventSubscriberInterface {
     }
 
     // Optional: Only redirect for specific content types.
-    if (!in_array($node->bundle(), ['event', 'pole', 'timeslot'])) {
+    if (!in_array($node->bundle(), ['event', 'timeslot'])) {
       return;
     }
 

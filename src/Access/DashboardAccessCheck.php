@@ -26,7 +26,7 @@ class DashboardAccessCheck implements AccessInterface {
    */
   public function accessNode(AccountInterface $account, NodeInterface $node) {
     // Define allowed content types.
-    $allowed_types = ['event', 'pole', 'timeslot'];
+    $allowed_types = ['event', 'timeslot'];
 
     // Check if the node type is in the allowed list.
     if (!in_array($node->bundle(), $allowed_types)) {
@@ -52,7 +52,7 @@ class DashboardAccessCheck implements AccessInterface {
    * @param \Drupal\Core\Session\AccountInterface $account
    *   The current user.
    * @param \Drupal\user\UserInterface $user
-   *   The node entity.
+   *   The user entity.
    *
    * @return \Drupal\Core\Access\AccessResultInterface
    *   The access result.
