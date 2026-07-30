@@ -517,6 +517,10 @@ function mapam_volunteer_flag_action_access($action, FlagInterface $flag, Accoun
     $parent_entity = $parent_target_manager->getParentEventTarget($volunteer_slot);
 
     // Check if the host entity has the unflag deadline field.
+    if (!$parent_entity) {
+      return AccessResult::neutral();
+    }
+
     if ($parent_entity->hasField('field_date_limit_unflag') && !$parent_entity->get('field_date_limit_unflag')->isEmpty()) {
       $date_limit = (int) $parent_entity->get('field_date_limit_unflag')->value;
 
