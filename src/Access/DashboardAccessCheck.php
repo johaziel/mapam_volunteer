@@ -26,7 +26,7 @@ class DashboardAccessCheck implements AccessInterface {
    */
   public function accessNode(AccountInterface $account, NodeInterface $node) {
     // Define allowed content types.
-    $allowed_types = ['event', 'timeslot'];
+    $allowed_types = ['event', 'pole', 'timeslot'];
 
     // Check if the node type is in the allowed list.
     if (!in_array($node->bundle(), $allowed_types)) {
