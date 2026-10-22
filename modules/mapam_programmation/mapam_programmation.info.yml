@@ -6,3 +6,4 @@ package: Mapam
 version: 1.0.0
 dependencies:
   - hook_event_dispatcher:core_event_dispatcher
+  - mapam_volunteer:mapam_volunteer
