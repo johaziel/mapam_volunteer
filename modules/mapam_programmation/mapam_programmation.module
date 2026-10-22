@@ -7,12 +7,12 @@
 
 use Drupal\node\Entity\Node;
 use Drupal\Core\Url;
-use Drupal\views\ViewExecutable;
+use Drupal\Core\Entity\EntityTypeInterface;
 
 /**
  * Implements hook_preprocess_views_view_field().
  */
-function mapam_volunteer_preprocess_views_view_field(&$variables) {
+function mapam_programmation_preprocess_views_view_field(&$variables) {
   $view = $variables['view'];
   $field = $variables['field'];
   $row = $variables['row'];
@@ -55,7 +55,7 @@ function mapam_volunteer_preprocess_views_view_field(&$variables) {
 
     $key = 'entity:node/search_api_reverse_entity_references_node__field_volunteer_needs';
 
-    if (!isset($row->_relationship_objects[$key]) && !empty($row->_relationship_objects[$key])) {
+    if (empty($row->_relationship_objects[$key])) {
       return;
     }
 
@@ -91,8 +91,12 @@ function mapam_volunteer_preprocess_views_view_field(&$variables) {
 }
 
 /**
- * Implements hook_views_pre_render().
+ * Implements hook_entity_bundle_field_info_alter().
  */
-function mapam_volunteer_og_views_pre_render(ViewExecutable $view) {
-
+function mapam_programmation_entity_bundle_field_info_alter(&$fields, EntityTypeInterface $entity_type, $bundle) {
+  // A timeslot is the volunteer need of one session only, see
+  // \Drupal\mapam_programmation\EventSubscriber\SessionSubscriber.
+  if ($entity_type->id() === 'node' && $bundle === 'session' && isset($fields['field_volunteer_needs'])) {
+    $fields['field_volunteer_needs']->addConstraint('MapamProgrammationUniqueVolunteerNeed');
+  }
 }
