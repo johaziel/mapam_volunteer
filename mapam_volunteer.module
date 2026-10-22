@@ -708,48 +708,6 @@ function mapam_volunteer_taxonomy_term_view(array &$build, EntityInterface $enti
 }
 
 /**
- * Helper function to get the parent entity of a given entity.
- *
- * @param \Drupal\Core\Entity\EntityInterface $entity
- *   The child entity.
- * @param string $parent_type
- *   The parent entity type ID. Default is 'node'.
- * @param string $parent_bundle
- *   The parent entity bundle. Default is 'event'.
- *
- * @return \Drupal\Core\Entity\EntityInterface|null
- *   The parent entity if found, NULL otherwise.
- */
-function mapam_volunteer_get_parent_entity(EntityInterface $entity, $parent_type = 'node', $parent_bundle = 'event') {
-  $storage = \Drupal::entityTypeManager()->getStorage($parent_type);
-  $bundle_key = $storage->getEntityType()->getKey('bundle');
-  $field_definitions = \Drupal::service('entity_field.manager')->getFieldDefinitions($parent_type, $parent_bundle);
-
-  // Look for a parent referencing the entity in any of its reference fields
-  // that can target the entity bundle.
-  foreach ($field_definitions as $field_name => $field_definition) {
-    if ($field_definition->getType() !== 'entity_reference' || $field_definition->getSetting('target_type') !== $entity->getEntityTypeId()) {
-      continue;
-    }
-    $target_bundles = $field_definition->getSetting('handler_settings')['target_bundles'] ?? [];
-    if ($target_bundles && !isset($target_bundles[$entity->bundle()])) {
-      continue;
-    }
-    $ids = $storage->getQuery()
-      ->accessCheck(FALSE)
-      ->condition($bundle_key, $parent_bundle)
-      ->condition($field_name, $entity->id())
-      ->range(0, 1)
-      ->execute();
-    if ($ids) {
-      return $storage->load(reset($ids));
-    }
-  }
-
-  return NULL;
-}
-
-/**
  * Implements hook_form_FORM_ID_alter().
  */
 function mapam_volunteer_form_node_timeslot_recur_form_alter(array &$form, FormStateInterface $form_state, $form_id) {
