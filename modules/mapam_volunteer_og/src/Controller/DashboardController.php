@@ -110,7 +110,6 @@ class DashboardController extends ControllerBase {
   public function eventPoleAccess(NodeInterface $node, ?NodeInterface $event = NULL): AccessResultInterface {
     // Define allowed content types.
     $allowed_types = ['pole'];
-    ddl($this->currentUser->id(), 'eventPoleAccess');
 
     // Check if the node type is in the allowed list.
     if (!in_array($node->bundle(), $allowed_types)) {

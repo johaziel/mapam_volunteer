@@ -7,3 +7,9 @@ access node dashboard:
 access user dashboard:
   title: 'Access User Dashboard'
   description: 'Allows users to access the dashboard for users.'
+
+# permission to manage all poles, regardless of their referents
+manage all poles:
+  title: 'Manage all poles'
+  description: 'Allows users to see the dashboards and to change the poles and timeslots of all poles. Without it, only the referents of a pole can.'
+  restrict access: true

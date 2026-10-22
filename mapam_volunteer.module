@@ -6,6 +6,11 @@
  */
 
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Field\FieldDefinitionInterface;
+use Drupal\Core\Field\FieldItemListInterface;
+use Drupal\mapam_volunteer\RegistrationValidator;
+use Drupal\node\NodeInterface;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\flag\Entity\Flagging;
 use Drupal\Core\Database\Database;
@@ -14,7 +19,6 @@ use Drupal\flag\FlagInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\flag\Entity\Flag;
 use Drupal\user\Entity\User;
-use Drupal\Core\Entity\EntityStorageException;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\node\Entity\Node;
 use Drupal\Component\Serialization\Json;
@@ -189,54 +193,6 @@ function mapam_volunteer_theme_suggestions_item_list_alter(array &$suggestions, 
 }
 
 /**
- * Implements hook_entity_presave().
- *
- * @todo Move this to a subscriber.
- */
-function mapam_volunteer_entity_presave(EntityInterface $entity) {
-  // Only act on flagging entities.
-  if ($entity instanceof Flagging) {
-    $flag = $entity->getFlag();
-    $flaggable = $entity->getFlaggable();
-
-    // Skip check for administrators.
-    $account = \Drupal::currentUser();
-    if ($account->hasPermission('administer flaggings')) {
-      return;
-    }
-
-    // Only apply to your flag.
-    if ($flag->id() !== 'volunteer') {
-      return;
-    }
-
-    // Check limit field exists and has a value.
-    if (!$flaggable->hasField('field_flag_limit') || $flaggable->get('field_flag_limit')->isEmpty()) {
-      return;
-    }
-
-    $limit = (int) $flaggable->get('field_flag_limit')->value;
-
-    if ($limit > 0) {
-      // Count how many users already flagged this entity.
-      $count = \Drupal::entityQuery('flagging')
-        ->accessCheck(FALSE)
-        ->condition('flag_id', $flag->id())
-        ->condition('entity_type', $flaggable->getEntityTypeId())
-        ->condition('entity_id', $flaggable->id())
-        ->count()
-        ->execute();
-
-      if ($count >= $limit) {
-        \Drupal::messenger()->addWarning(t('There are no more available spots for this item.'));
-
-        throw new EntityStorageException('Flag limit reached: blocking save, but silently.');
-      }
-    }
-  }
-}
-
-/**
  * Get the count of flag for an entity.
  */
 function mapam_volunteer_get_current_flag_count($entity) {
@@ -314,54 +270,39 @@ function template_preprocess_flag_fse_fallback_link(&$variables) {
     );
   }
 
-  $limit = $entity->get('field_flag_limit')->value;
-  $current = mapam_volunteer_get_current_flag_count($entity);
+  /** @var \Drupal\mapam_volunteer\RegistrationValidator $validator */
+  $validator = \Drupal::service('mapam_volunteer.registration_validator');
+  $limit = $validator->getLimit($entity);
+  $current = $validator->getRegistrationCount($entity);
 
   $variables['flag_limit'] = $limit ?? 'unlimited';
   $variables['flag_current'] = $current;
-  $variables['flag_remaining'] = max(0, $limit - $current);
+  $variables['flag_remaining'] = $limit === NULL ? NULL : max(0, $limit - $current);
 
   // Passer aussi une info pour masquer le bouton si complet.
-  $variables['flag_full'] = ($limit > 0 && $current >= $limit);
+  $variables['flag_full'] = ($limit !== NULL && $current >= $limit);
 
-  // Only check for volunteer flag.
-  if ($flag->id() == 'volunteer' && $entity) {
-    // Skip check for administrators.
-    if ($account->hasPermission('administer flaggings')) {
-      return;
-    }
-    $volunteer_slot = $entity;
-
-    // Call the ParentEventTarget plugins to find the parent event of this volunteer slot.
-    // @todo :remove mapam_volunteer_get_parent_entity.
-    $parent_target_manager = \Drupal::service('plugin.manager.parent_event_target')->getApplicableTarget($volunteer_slot);
-    $parent_entity = $parent_target_manager->getParentEventTarget($volunteer_slot);
-    if ($parent_entity) {
-      // Check if the flag deadline has passed.
-      if ($action == 'flag' && $parent_entity->hasField('field_date_limit_flag') && !$parent_entity->get('field_date_limit_flag')->isEmpty()) {
-        $date_limit = (int) $parent_entity->get('field_date_limit_flag')->value;
-        $current_timestamp = time();
-        if ($current_timestamp > $date_limit) {
-          $variables['flag_deadline_passed'] = TRUE;
-          $variables['attributes']['class'][] = 'flag-deadline-passed';
-          $variables['#attached']['library'][] = 'gin/gin_description_toggle';
-        }
-      }
-
-      // Check if the unflag deadline has passed.
-      if ($action == 'unflag' && $parent_entity->hasField('field_date_limit_unflag') && !$parent_entity->get('field_date_limit_unflag')->isEmpty()) {
-        $date_limit = (int) $parent_entity->get('field_date_limit_unflag')->value;
-        $current_timestamp = time();
-        if ($current_timestamp > $date_limit) {
-          $variables['unflag_deadline_passed'] = TRUE;
-          $variables['attributes']['class'][] = 'unflag-deadline-passed';
-          $variables['#attached']['library'][] = 'gin/gin_description_toggle';
-        }
-      }
-    }
-
+  // The deadlines do not apply to users who may bypass them.
+  if ($flag->id() !== RegistrationValidator::FLAG_ID || $account->hasPermission(RegistrationValidator::BYPASS_PERMISSION)) {
+    return;
   }
-
+  if ($action == 'flag' && $validator->isDeadlinePassed($entity, 'flag')) {
+    $variables['flag_deadline_passed'] = TRUE;
+    $variables['attributes']['class'][] = 'flag-deadline-passed';
+    $variables['#attached']['library'][] = 'gin/gin_description_toggle';
+  }
+  if ($action == 'unflag' && $validator->isDeadlinePassed($entity, 'unflag')) {
+    $variables['unflag_deadline_passed'] = TRUE;
+    $variables['attributes']['class'][] = 'unflag-deadline-passed';
+    $variables['#attached']['library'][] = 'gin/gin_description_toggle';
+  }
+  // The link changes when the deadlines pass.
+  foreach (['flag', 'unflag'] as $deadline_action) {
+    $deadline = $validator->getDeadline($entity, $deadline_action);
+    if ($deadline !== NULL && $deadline > \Drupal::time()->getRequestTime()) {
+      $variables['#cache']['max-age'] = min($variables['#cache']['max-age'] ?? PHP_INT_MAX, $deadline - \Drupal::time()->getRequestTime());
+    }
+  }
 }
 
 /**
@@ -500,46 +441,97 @@ function mapam_volunteer_views_data_alter(array &$data) {
 
 /**
  * Implements hook_flag_action_access().
+ *
+ * Only the referents of a pole register other users on its timeslots. The
+ * registration rules (deadlines, limit, overlaps) are applied when flagging,
+ * see \Drupal\mapam_volunteer\VolunteerFlagService.
  */
 function mapam_volunteer_flag_action_access($action, FlagInterface $flag, AccountInterface $account, ?EntityInterface $flaggable = NULL) {
+  if ($action !== 'flag_fse' || $flag->id() !== RegistrationValidator::FLAG_ID || !$flaggable instanceof NodeInterface) {
+    return AccessResult::neutral();
+  }
+  $access = \Drupal::service('mapam_volunteer.pole_referents')->access($flaggable, $account);
+  if ($access->isAllowed()) {
+    return AccessResult::neutral()->inheritCacheability($access);
+  }
+  return AccessResult::forbidden('Only the referents of the pole register other users.')->inheritCacheability($access);
+}
 
-  if ($flag->id() == 'volunteer' && $action == 'unflag') {
+/**
+ * Implements hook_node_access().
+ *
+ * Only the referents of a pole change the pole and its timeslots.
+ */
+function mapam_volunteer_node_access(NodeInterface $node, $operation, AccountInterface $account) {
+  if (!in_array($operation, ['update', 'delete'], TRUE) || !in_array($node->bundle(), ['pole', 'timeslot', 'timeslot_recur'], TRUE)) {
+    return AccessResult::neutral();
+  }
+  $access = \Drupal::service('mapam_volunteer.pole_referents')->access($node, $account);
+  if ($access->isAllowed()) {
+    return AccessResult::neutral()->inheritCacheability($access);
+  }
+  return AccessResult::forbidden('Only the referents of the pole change it.')->inheritCacheability($access);
+}
 
-    // Allow users with 'administer flaggings' permission to always unflag.
-    if ($account->hasPermission('administer flaggings')) {
-      return AccessResult::allowed()->addCacheableDependency($flag);
-    }
+/**
+ * Implements hook_entity_field_access().
+ *
+ * Referents publish and unpublish their poles and timeslots.
+ */
+function mapam_volunteer_entity_field_access($operation, FieldDefinitionInterface $field_definition, AccountInterface $account, ?FieldItemListInterface $items = NULL) {
+  if ($operation !== 'edit' || $field_definition->getName() !== 'status' || !$items) {
+    return AccessResult::neutral();
+  }
+  $node = $items->getEntity();
+  if (!$node instanceof NodeInterface || !in_array($node->bundle(), ['pole', 'timeslot', 'timeslot_recur'], TRUE)) {
+    return AccessResult::neutral();
+  }
+  return \Drupal::service('mapam_volunteer.pole_referents')->access($node, $account);
+}
 
-    $volunteer_slot = $flaggable;
+/**
+ * Implements hook_entity_bundle_field_info_alter().
+ */
+function mapam_volunteer_entity_bundle_field_info_alter(&$fields, EntityTypeInterface $entity_type, $bundle) {
+  // Referents only add timeslots to their own poles.
+  if ($entity_type->id() === 'node' && in_array($bundle, ['timeslot', 'timeslot_recur'], TRUE) && isset($fields['field_pole'])) {
+    $fields['field_pole']->addConstraint('MapamVolunteerManagedPole');
+  }
+}
 
-    // Call the ParentEventTarget plugins to find the parent event of this volunteer slot.
-    $parent_target_manager = \Drupal::service('plugin.manager.parent_event_target')->getApplicableTarget($volunteer_slot);
-    $parent_entity = $parent_target_manager->getParentEventTarget($volunteer_slot);
+/**
+ * Implements hook_form_FORM_ID_alter() for flag_fse_confirm_form.
+ */
+function mapam_volunteer_form_flag_fse_confirm_form_alter(array &$form, FormStateInterface $form_state) {
+  $form['#validate'][] = 'mapam_volunteer_flag_fse_confirm_form_validate';
+}
 
-    // Check if the host entity has the unflag deadline field.
-    if (!$parent_entity) {
-      return AccessResult::neutral();
-    }
-
-    if ($parent_entity->hasField('field_date_limit_unflag') && !$parent_entity->get('field_date_limit_unflag')->isEmpty()) {
-      $date_limit = (int) $parent_entity->get('field_date_limit_unflag')->value;
-
-      $current_timestamp = time();
-
-      // If the deadline has passed, forbid unflagging.
-      if ($current_timestamp > $date_limit) {
-        static $message_displayed = FALSE;
-        if (!$message_displayed) {
-          \Drupal::messenger()->addWarning(t('The deadline to unregister has passed.'));
-          $message_displayed = TRUE;
-        }
-        return AccessResult::forbidden()->addCacheableDependency($flag);
-      }
-    }
+/**
+ * Validates the registration of other users on a timeslot.
+ */
+function mapam_volunteer_flag_fse_confirm_form_validate(array &$form, FormStateInterface $form_state) {
+  $form_object = $form_state->getFormObject();
+  $flag = $form_object->getFlag();
+  $timeslot = $form_object->getEntity();
+  if ($form_state->hasAnyErrors() || $flag->id() !== RegistrationValidator::FLAG_ID) {
+    return;
   }
 
-  // Return neutral to allow other access checks.
-  return AccessResult::neutral();
+  if ($form_state->getValue('user_type') === 'new') {
+    $users = [$form_state->get('user')];
+  }
+  else {
+    // Same as FlagFseConfirmForm::getSelectedUserIds(): checkboxes or an
+    // autocomplete field.
+    $uids = $form_state->getValue('uids');
+    $uids = is_array($uids) ? array_values(array_filter($uids)) : array_column((array) $form_state->getValue('uid'), 'target_id');
+    $users = User::loadMultiple($uids);
+  }
+
+  $errors = \Drupal::service('mapam_volunteer.registration_validator')->validateRegistration($timeslot, array_filter($users), \Drupal::currentUser());
+  foreach ($errors as $error) {
+    $form_state->setErrorByName('user', $error);
+  }
 }
 
 /**
@@ -728,23 +720,28 @@ function mapam_volunteer_taxonomy_term_view(array &$build, EntityInterface $enti
  *   The parent entity if found, NULL otherwise.
  */
 function mapam_volunteer_get_parent_entity(EntityInterface $entity, $parent_type = 'node', $parent_bundle = 'event') {
-  // Use the back reference service to find the parent event.
-  $back_reference_service = \Drupal::service('entity_back_reference.back_reference_finder');
-  $back_ref_field = $back_reference_service->getReferencingFieldList('node', $entity->bundle());
+  $storage = \Drupal::entityTypeManager()->getStorage($parent_type);
+  $bundle_key = $storage->getEntityType()->getKey('bundle');
+  $field_definitions = \Drupal::service('entity_field.manager')->getFieldDefinitions($parent_type, $parent_bundle);
 
-  if (!empty($back_ref_field)) {
-    // Loop through all the field config where our entity has been referenced.
-    foreach ($back_ref_field as $fieldConfig) {
-      // Load all entities referencing the volunteer slot.
-      $referencing_entities = $back_reference_service->loadBackReferencedEntities($fieldConfig, $entity->id());
+  // Look for a parent referencing the entity in any of its reference fields
+  // that can target the entity bundle.
+  foreach ($field_definitions as $field_name => $field_definition) {
+    if ($field_definition->getType() !== 'entity_reference' || $field_definition->getSetting('target_type') !== $entity->getEntityTypeId()) {
+      continue;
     }
-  }
-
-  // Filter to find the parent event node.
-  foreach ($referencing_entities as $referencing_entity) {
-    if ($referencing_entity->getEntityTypeId() === $parent_type &&
-      $referencing_entity->bundle() === $parent_bundle) {
-      return $referencing_entity;
+    $target_bundles = $field_definition->getSetting('handler_settings')['target_bundles'] ?? [];
+    if ($target_bundles && !isset($target_bundles[$entity->bundle()])) {
+      continue;
+    }
+    $ids = $storage->getQuery()
+      ->accessCheck(FALSE)
+      ->condition($bundle_key, $parent_bundle)
+      ->condition($field_name, $entity->id())
+      ->range(0, 1)
+      ->execute();
+    if ($ids) {
+      return $storage->load(reset($ids));
     }
   }
 

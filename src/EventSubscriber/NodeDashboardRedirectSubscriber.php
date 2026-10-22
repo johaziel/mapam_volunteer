@@ -112,17 +112,21 @@ class NodeDashboardRedirectSubscriber implements EventSubscriberInterface {
       return;
     }
 
-    // Build the redirect URL.
+    // Build the redirect URL, only for users who may see the dashboard: the
+    // referents of the pole.
     $url = Url::fromRoute('mapam_volunteer.node.dashboard', [
       'node' => $node->id(),
     ]);
+    if (!$url->access($this->currentUser)) {
+      return;
+    }
 
     // Create a cacheable redirect response.
     $response = new CacheableRedirectResponse($url->toString());
 
     // Add cache metadata.
     $cache_metadata = new CacheableMetadata();
-    $cache_metadata->setCacheContexts(['user.roles', 'url.path']);
+    $cache_metadata->setCacheContexts(['user', 'url.path']);
     $cache_metadata->addCacheTags($node->getCacheTags());
     $response->addCacheableDependency($cache_metadata);
 

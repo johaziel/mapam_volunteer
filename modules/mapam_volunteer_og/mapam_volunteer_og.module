@@ -145,11 +145,9 @@ function mapam_volunteer_og_views_data_alter(array &$data) {
  * Implements hook_views_pre_build().
  */
 function mapam_volunteer_og_views_pre_build(ViewExecutable $view) {
-  ddl($view->id(), 'views_pre_build');
   if ($view->id() == 'event_poles_admin') {
 
     $node = \Drupal::routeMatch()->getParameter('node');
-    ddl($node, 'event_poles_admin');
     if (!$node instanceof Node || $node->bundle() !== 'event') {
       return;
     }
@@ -160,17 +158,8 @@ function mapam_volunteer_og_views_pre_build(ViewExecutable $view) {
     if ($organization) {
 
       $view->setArguments([$organization->id()]);
-      ddl($view->args);
     }
   }
 
 }
 
-/**
- * Implements hook_views_pre_execute().
- */
-function mapam_volunteer_og_views_pre_execute(ViewExecutable $view) {
-  if ($view->id() == 'pole_timeline_index') {
-    ddl($view->args, 'pole_timeline_index block_1');
-  }
-}

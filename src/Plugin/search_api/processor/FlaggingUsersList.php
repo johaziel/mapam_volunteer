@@ -132,8 +132,6 @@ class FlaggingUsersList extends FlagIndexer {
           ->filterForPropertyPath($item->getFields(), NULL, 'flagging_users_' . $flag_id . '_list');
 
         // Add values to the indexed fields.
-        $fields = $item->getFields(FALSE);
-
         foreach ($fields as $flag_field) {
           $users = $this->flagService->getFlaggingUsers($entity, $flags[$flag_id]);
           /** @var \Drupal\user\Entity\User $user */

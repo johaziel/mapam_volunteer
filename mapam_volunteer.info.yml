@@ -1,11 +1,10 @@
 name: 'Mapam Volunteer'
 type: module
 description: 'Module for Mapam Volunteer custom functionalities.'
-core_version_requirement: ^8 || ^9 || ^10
+core_version_requirement: ^10 || ^11
 package: Mapam
 version: 1.0.0
 dependencies:
-  - vistimeline_command:vistimeline_command
   - search_api:search_api
   - search_api:search_api_db
   - better_exposed_filters:better_exposed_filters

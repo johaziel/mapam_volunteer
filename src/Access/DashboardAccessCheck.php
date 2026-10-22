@@ -3,15 +3,29 @@
 namespace Drupal\mapam_volunteer\Access;
 
 use Drupal\Core\Access\AccessResult;
+use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Routing\Access\AccessInterface;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\mapam_volunteer\PoleReferents;
 use Drupal\node\NodeInterface;
 use Drupal\user\UserInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Access check for the dashboard route.
  */
-class DashboardAccessCheck implements AccessInterface {
+class DashboardAccessCheck implements AccessInterface, ContainerInjectionInterface {
+
+  public function __construct(
+    protected PoleReferents $poleReferents,
+  ) {}
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static($container->get('mapam_volunteer.pole_referents'));
+  }
 
   /**
    * Checks access to the node dashboard.
@@ -27,7 +41,6 @@ class DashboardAccessCheck implements AccessInterface {
   public function accessNode(AccountInterface $account, NodeInterface $node) {
     // Define allowed content types.
     $allowed_types = ['event', 'pole', 'timeslot'];
-    ddl($node->bundle());
     // Check if the node type is in the allowed list.
     if (!in_array($node->bundle(), $allowed_types)) {
       return AccessResult::forbidden()
@@ -35,10 +48,11 @@ class DashboardAccessCheck implements AccessInterface {
         ->addCacheTags(['node_type:' . $node->bundle()]);
     }
 
+    // Only the referents of the poles of the node, unless they may manage
+    // all poles.
     if ($account->hasPermission('access node dashboard')) {
-      return AccessResult::allowed()
-        ->cachePerUser()
-        ->addCacheableDependency($node);
+      $access = $this->poleReferents->access($node, $account);
+      return $access->isAllowed() ? $access : AccessResult::forbidden()->inheritCacheability($access);
     }
 
     return AccessResult::forbidden()

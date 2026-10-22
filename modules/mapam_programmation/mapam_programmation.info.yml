@@ -1,7 +1,7 @@
 name: 'Mapam Programmation'
 type: module
 description: 'Provide plugin and event subscriber for Programmation functionnalities.'
-core_version_requirement: ^10
+core_version_requirement: ^10 || ^11
 package: Mapam
 version: 1.0.0
 dependencies:

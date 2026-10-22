@@ -29,28 +29,7 @@ class FieldParentEventTarget extends ParentEventTargetBase {
    * {@inheritdoc}
    */
   public function getParentEventTarget(EntityInterface $entity) {
-    // Use the back reference service to find the parent event.
-    ddl('getParentEventTarget');
-    $back_reference_service = \Drupal::service('entity_back_reference.back_reference_finder');
-    $back_ref_field = $back_reference_service->getReferencingFieldList('node', $entity->bundle());
-
-    if (!empty($back_ref_field)) {
-      // Loop through all the field config where our entity has been referenced.
-      foreach ($back_ref_field as $fieldConfig) {
-        // Load all entities referencing the volunteer slot.
-        $referencing_entities = $back_reference_service->loadBackReferencedEntities($fieldConfig, $entity->id());
-      }
-    }
-
-    // Filter to find the parent event node.
-    foreach ($referencing_entities as $referencing_entity) {
-      if ($referencing_entity->getEntityTypeId() === 'node' &&
-        $referencing_entity->bundle() === 'event') {
-        return $referencing_entity;
-      }
-    }
-
-    return NULL;
+    return mapam_volunteer_get_parent_entity($entity);
   }
 
 }

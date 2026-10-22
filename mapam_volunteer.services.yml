@@ -1,9 +1,9 @@
 services:
-  mapam_volunteer.flag_subscriber:
-    class: Drupal\mapam_volunteer\EventSubscriber\FlagConflictSubscriber
-    arguments: ['@current_user', '@flag', '@state', '@database']
-    tags:
-      - { name: event_subscriber }
+  mapam_volunteer.registration_validator:
+    class: Drupal\mapam_volunteer\RegistrationValidator
+    arguments: ['@entity_type.manager', '@plugin.manager.parent_event_target', '@datetime.time']
+  mapam_volunteer.pole_referents:
+    class: Drupal\mapam_volunteer\PoleReferents
   mapam_volunteer.flag_fse_new_user_subscriber:
     class: Drupal\mapam_volunteer\EventSubscriber\FlagFseNewUserSubscriber
     arguments: ['@entity_type.manager']
