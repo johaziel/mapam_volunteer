@@ -1,113 +1,159 @@
 /**
  * @file
- * ADD to Vis timeline nav by day functionnality.
+ * Adds a lock toggle and a navigation by day to the Vis timelines.
+ *
+ * Uses the events of Views Vis Timeline: "visTimeline:ready" (the timeline is
+ * created, the instance is event.detail) and "visTimeline:itemsUpdated" (items
+ * were added or changed, the instance is event.detail.instance).
  */
 
-(function ($, Drupal, luxon, once) {
-  const { DateTime } = luxon;
+((Drupal, once) => {
+  // Editing starts locked, to avoid moving items by accident.
+  const START_LOCKED = true;
 
-  Drupal.behaviors.navByDay = {
-    attach: function (context, settings) {
+  // The navigation by day is only shown up to this number of days.
+  const MAX_DAYS = 15;
 
-      // ── Listen for vis.Timeline instances becoming ready ──────────────────
-      once('navByDay', 'body', context).forEach(function () {
-        // Event fired by the parent module's JS after new vis.Timeline().
-        $(document).on('visTimelineReady', function (event, timelineId, timeline) {
-          if (!timeline) return;
-
-          // Add a toggle editable: true/false button to the timeline's DOM for testing.
-          var toggleButton = document.createElement("div");
-          let isEditable = timeline.options.editable ?? false;
-
-          // Normalisation (au cas où editable était undefined au départ)
-          timeline.setOptions({
-            editable: {
-              add: isEditable,
-              updateTime: isEditable,
-              updateGroup: isEditable,
-              remove: isEditable
-            }
-          });
-
-          toggleButton.innerHTML = isEditable ? '<i class="bi bi-unlock-fill"></i>' : '<i class="bi bi-lock-fill"></i>';
-          toggleButton.title = isEditable ? 'Click to lock timeline (disable editing)' : 'Click to unlock timeline (enable editing)';
-          toggleButton.style.cursor = "pointer";
-          toggleButton.className = "timeline-toggle-editable";
-
-          toggleButton.onclick = function () {
-            isEditable = !isEditable;
-            timeline.setOptions({
-              editable: {
-                add: isEditable,
-                updateTime: isEditable,
-                updateGroup: isEditable,
-                remove: isEditable
-              }
-            });
-            toggleButton.innerHTML = isEditable ? '<i class="bi bi-unlock-fill"></i>' : '<i class="bi bi-lock-fill"></i>';
-          };
-          timeline.dom.container.parentNode.insertBefore(toggleButton, timeline.dom.container);
-
-          var range = timeline.getWindow();
-          var visibleItems = timeline.itemsData.get();
-
-          if (visibleItems.length > 0) {
-            range.start = visibleItems[0].start;
-            range.end = visibleItems[visibleItems.length - 1].end;
-          }
-
-          // Calculate total different days in the visible range.
-          var startDate = DateTime.fromJSDate(range.start).startOf('day');
-          var endDate = DateTime.fromJSDate(range.end).startOf('day');
-          var totalDays = Math.ceil(endDate.diff(startDate, 'days').days) + 1;
-
-          // Only show nav by day if the range is 15 days or less to avoid overwhelming the UI.
-          if (totalDays <= 15) {
-            var navDaysContainer = document.getElementById("navDaysContainer");
-
-            if (!navDaysContainer) {
-              navDaysContainer = document.createElement("div");
-              navDaysContainer.id = "navDaysContainer";
-              timeline.dom.container.parentNode.insertBefore(navDaysContainer, timeline.dom.container);
-            }
-
-            navDaysContainer.innerHTML = "";
-
-            for (let i = 0; i < totalDays; i++) {
-              let button = document.createElement("button");
-              button.id = "navDay" + (i + 1);
-
-              let dayDate = i === 0
-                ? DateTime.fromJSDate(range.start)
-                : DateTime.fromJSDate(range.start).startOf('day').plus({ days: i });
-
-              // Format the button label to a custom format, e.g. "Lun. 24 Jan". witout the year to save space.
-              if (totalDays <= 7) {
-                button.textContent  = dayDate.toLocaleString({ weekday: 'short', day: '2-digit', month: 'short' });
-              }
-              else {
-                button.textContent  = dayDate.toLocaleString({ weekday: 'short', day: '2-digit' });
-              }
-              
-              button.onclick = function () {
-                navByDay(timeline, dayDate);
-              };
-
-              navDaysContainer.appendChild(button);
-            }
-          }
-        });
-      });
-    }
+  const LOCKED = {
+    add: false,
+    updateTime: false,
+    updateGroup: false,
+    remove: false,
+    // Item level "editable" values computed from entity access would win
+    // otherwise.
+    overrideItems: true,
   };
 
-  function navByDay(timeline, dayDate) {
-    var startOfDay = dayDate.set({ hour: 7, minute: 0, second: 0, millisecond: 0 }).toJSDate();
-    var endOfDay = dayDate.set({ hour: 23, minute: 59, second: 59, millisecond: 999 }).toJSDate();
-    timeline.setWindow({
-      start: startOfDay,
-      end: endOfDay,
-    });
+  /**
+   * Whether the current user may change something on the timeline.
+   */
+  function canEdit(config) {
+    const editable = config.options.editable || {};
+    return Boolean(
+      editable.add ||
+        editable.updateTime ||
+        editable.updateGroup ||
+        editable.remove ||
+        config.options.groupEditable,
+    );
   }
 
-}(jQuery, Drupal, luxon, once)); 
+  /**
+   * Locks or unlocks the editing of a timeline.
+   */
+  function setLocked(instance, button, locked) {
+    const { options } = instance.config;
+    instance.timeline.setOptions({
+      editable: locked ? LOCKED : options.editable,
+      groupEditable: locked ? false : options.groupEditable || false,
+    });
+    instance.element.classList.toggle('is-locked', locked);
+    button.setAttribute('aria-pressed', String(locked));
+    button.title = locked
+      ? Drupal.t('Unlock the timeline to edit it')
+      : Drupal.t('Lock the timeline');
+    button.innerHTML = locked
+      ? '<i class="bi bi-lock-fill" aria-hidden="true"></i>'
+      : '<i class="bi bi-unlock-fill" aria-hidden="true"></i>';
+    button.setAttribute('aria-label', button.title);
+  }
+
+  /**
+   * Adds the lock toggle before the timeline.
+   */
+  function addLockToggle(instance) {
+    if (!canEdit(instance.config)) {
+      return;
+    }
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'timeline-toggle-editable';
+    let locked = START_LOCKED;
+    setLocked(instance, button, locked);
+    button.addEventListener('click', () => {
+      locked = !locked;
+      setLocked(instance, button, locked);
+    });
+    instance.element.parentNode.insertBefore(button, instance.element);
+  }
+
+  /**
+   * Returns the local midnight of a date.
+   */
+  function startOfDay(date) {
+    const day = new Date(date);
+    day.setHours(0, 0, 0, 0);
+    return day;
+  }
+
+  /**
+   * Builds or rebuilds the day buttons of a timeline, from its items.
+   */
+  function buildDayNavigation(instance) {
+    let container = instance.element.parentNode.querySelector(
+      ':scope > .nav-days',
+    );
+    const items = instance.items.get();
+    if (!items.length) {
+      container?.remove();
+      return;
+    }
+
+    const starts = items.map((item) => new Date(item.start).getTime());
+    const ends = items.map((item) => new Date(item.end || item.start).getTime());
+    const first = startOfDay(Math.min(...starts));
+    const last = startOfDay(Math.max(...ends));
+    const totalDays = Math.round((last - first) / 86400000) + 1;
+    if (totalDays > MAX_DAYS) {
+      container?.remove();
+      return;
+    }
+
+    if (!container) {
+      container = document.createElement('div');
+      container.className = 'nav-days';
+      container.setAttribute('role', 'group');
+      container.setAttribute('aria-label', Drupal.t('Go to a day'));
+      instance.element.parentNode.insertBefore(container, instance.element);
+    }
+    container.textContent = '';
+
+    // Without the year to save space, and without the month beyond a week.
+    const format = new Intl.DateTimeFormat(
+      document.documentElement.lang || undefined,
+      totalDays <= 7
+        ? { weekday: 'short', day: '2-digit', month: 'short' }
+        : { weekday: 'short', day: '2-digit' },
+    );
+    for (let i = 0; i < totalDays; i++) {
+      const day = new Date(first);
+      day.setDate(first.getDate() + i);
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = format.format(day);
+      button.addEventListener('click', () => {
+        const start = new Date(day);
+        start.setHours(7, 0, 0, 0);
+        const end = new Date(day);
+        end.setHours(23, 59, 59, 999);
+        instance.timeline.setWindow(start, end);
+      });
+      container.appendChild(button);
+    }
+  }
+
+  document.addEventListener('visTimeline:ready', (event) => {
+    const instance = event.detail;
+    if (!instance || !once('navByDay', instance.element).length) {
+      return;
+    }
+    addLockToggle(instance);
+    buildDayNavigation(instance);
+  });
+
+  document.addEventListener('visTimeline:itemsUpdated', (event) => {
+    if (event.detail?.instance) {
+      buildDayNavigation(event.detail.instance);
+    }
+  });
+})(Drupal, once);

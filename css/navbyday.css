@@ -1,8 +1,8 @@
-#navDaysContainer {
-  padding:var(--gin-spacing-xs);;
+.nav-days {
+  padding: var(--gin-spacing-xs);
 }
 
-#navDaysContainer button{
+.nav-days button {
   margin:3px 5px;
   border: 1px solid var(--gin-border-color-form-element);
   border-radius: 4px; 
@@ -13,6 +13,8 @@
 }
 
 .timeline-toggle-editable {
+  border: 0;
+  background: none;
   position:absolute;
   top:10px;
   right:50px;
@@ -34,4 +36,9 @@
   border-color:var(--gin-color-danger-light);
   color:var(--gin-color-danger);
   background-color: var(--gin-color-danger-lightest);
+}
+
+/* Group edit buttons are hidden while the timeline is locked. */
+.vis-timeline-canvas.is-locked .vis-timeline-group-edit {
+  display: none;
 }
