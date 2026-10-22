@@ -35,3 +35,12 @@ services:
   plugin.manager.parent_event_target:
     class: Drupal\mapam_volunteer\Plugin\ParentEventTargetManager
     parent: default_plugin_manager
+  mapam_volunteer.current_event:
+    class: Drupal\mapam_volunteer\CurrentEvent
+    arguments: ['@entity_type.manager', '@current_route_match']
+  mapam_volunteer.breadcrumb:
+    class: Drupal\mapam_volunteer\MapamVolunteerBreadcrumbBuilder
+    arguments: ['@mapam_volunteer.current_event']
+    tags:
+      # Before Easy Breadcrumb (1003), which builds the breadcrumb from the path.
+      - { name: breadcrumb_builder, priority: 1010 }

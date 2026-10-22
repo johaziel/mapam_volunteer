@@ -9,6 +9,7 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FieldItemListInterface;
+use Drupal\mapam_volunteer\CurrentEvent;
 use Drupal\mapam_volunteer\RegistrationValidator;
 use Drupal\node\NodeInterface;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
@@ -928,5 +929,60 @@ function mapam_volunteer_entity_view_mode_alter(&$view_mode, $entity, $context) 
     else {
       $view_mode = 'authenticated';
     }
+  }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_insert() for node.
+ */
+function mapam_volunteer_node_insert(NodeInterface $node) {
+  mapam_volunteer_keep_one_current_event($node);
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_update() for node.
+ */
+function mapam_volunteer_node_update(NodeInterface $node) {
+  mapam_volunteer_keep_one_current_event($node);
+}
+
+/**
+ * Unchecks "current event" on the other events when an event is checked.
+ */
+function mapam_volunteer_keep_one_current_event(NodeInterface $node) {
+  if ($node->bundle() === 'event' && $node->hasField(CurrentEvent::FIELD) && $node->get(CurrentEvent::FIELD)->value) {
+    \Drupal::service('mapam_volunteer.current_event')->setCurrent($node);
+  }
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ */
+function mapam_volunteer_theme_registry_alter(&$theme_registry) {
+  // Run after the preprocess of the themes: Gin removes the parents of nodes
+  // from the breadcrumb.
+  if (isset($theme_registry['breadcrumb'])) {
+    $theme_registry['breadcrumb']['preprocess functions'][] = 'mapam_volunteer_restore_festival_breadcrumb';
+  }
+}
+
+/**
+ * Preprocess callback: restores "Event > Pole > Timeslot" after the theme.
+ *
+ * @see \Drupal\mapam_volunteer\MapamVolunteerBreadcrumbBuilder
+ */
+function mapam_volunteer_restore_festival_breadcrumb(array &$variables) {
+  if (empty($variables['links']) || !\Drupal::service('mapam_volunteer.breadcrumb')->applies(\Drupal::routeMatch())) {
+    return;
+  }
+  // Keep the first item of the theme, e.g. "Back to site" in Gin.
+  $first = reset($variables['breadcrumb']);
+  $variables['breadcrumb'] = [$first];
+  foreach (array_slice($variables['links'], 1) as $link) {
+    $url = $link->getUrl();
+    $variables['breadcrumb'][] = [
+      'text' => $link->getText(),
+      'url' => $url->isRouted() && $url->getRouteName() === '<none>' ? '' : $url->toString(),
+    ];
   }
 }
